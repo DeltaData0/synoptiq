@@ -6,6 +6,19 @@
 | D-002 | 2026-09-26 | Use train/validation/test years 2010–15 / 2016–17 / 2018–19. | Pending data gate | No random row split. |
 | D-003 | 2026-09-26 | Keep fixture mode visibly labeled until real source retrieval and window audit pass. | Active | Prevents unsupported model claims. |
 | D-004 | 2026-09-26 | Withhold Day 10 until +240/+246-hour accumulation alignment is audited. | Active | Exact 03–03 UTC window is unverified. |
+| D-005 | 2026-09-27 | Freeze the IMD daily-date mapping as `[D-1 03:00Z, D 03:00Z)` for the selected IMD daily NetCDF product; permit only GEFS 00 UTC Day 1–9 exact windows and keep Day 10 `unavailable`. | Active | D1-04 audit cites the IMD observing convention (24-hour gauge accumulation ending 0300 UTC), retains a real GRIB arithmetic/code check, and shows no exact +240–+243 accumulation. Reopen if an official NetCDF time-bounds specification contradicts it. |
 
 Add a dated entry for any changed source, time convention, split, label policy, feature set, or released model.
 
+## Team roster and ticket ownership — 2026-09-27
+
+| Plan role | Team member | GitHub profile | Accountable scope |
+| --- | --- | --- |
+| A — data lead | Kanishka Pandey | `@kan9667` | GEFS inventory/download/decoding, accumulation audit, source manifest |
+| B — verification lead | Aanya Varshney | `@aanyavarshneyav` | IMD decoding, land regions, area coverage, labels |
+| C — ML lead | Rudraksh Saini | `@Rudrakssh` | Baselines, model, calibration, metrics |
+| D — features/explainability lead | Dhruv Makkar | `@dhruvsded1` | Issue-time features, analogs, grouped TreeSHAP |
+| E — product lead | Aadi Jain | `@DeltaData0` | API, dashboard, offline bundle |
+| F — integration/communication lead | Triman Singh Chadha | `@Triman01` | Acceptance gates, smoke, storyboard, slides, submission package |
+
+Ticket ownership follows the named A–F assignments in Plan §§8–9 and the Submission Roadmap in `AGENTS.md`. GitHub invitations use only the supplied usernames; responsibilities from prior projects are not carried into this SIH project.

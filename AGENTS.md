@@ -155,7 +155,7 @@ Check a task's box only after producing real, verifiable output for it in this s
 ### Phase 2: Audited labels and fixture vertical slice — [ ] Phase complete
 
 - [ ] D1-05 — Region GeoJSON, 80% coverage, alignment/label unit tests (Owner: B) — done when: Three hand-checked rows and no-data cases pass.
-- [ ] D1-06 — Fixture API/map + provenance (Owner: E+F) — done when: `make smoke` launches and renders a fixture replay offline with visible fixture ribbon. Tag `pilot-gate`.
+- [x] D1-06 — Fixture API/map + provenance (Owner: E+F) — done when: `make smoke` launches and renders a fixture replay offline with visible fixture ribbon. Tag `pilot-gate`. Evidence: offline dark command center with local Leaflet and plain JS/CSS; verified via `make web`, `pytest`, `make smoke`, and browser subagent inspection; fixture warning ribbon persistent; Day 2 missing lead and Day 10 unaudited states rendered truthfully.
 - [ ] D1-07 — First split-aware real `rows.parquet`/threshold summary (Owner: A+B+C) — done when: Counts by year/lead/season and missingness printed; train-only threshold test passes.
 
 ### Phase 3: Model, calibration, and real-data integration gate — [ ] Phase complete

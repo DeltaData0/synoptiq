@@ -44,7 +44,7 @@
             "type": "Feature",
             "geometry": {"type": "Polygon", "coordinates": [[[77,19],[79,19],[79,21],[77,21],[77,19]]]},
             "properties": {
-              "region_id": "R20N-078E", "valid_start_utc": null, "valid_end_utc": null, "p_bust": null, "tier": "no_data", "threshold_mm": null, "window_quality": "unavailable", "provenance": "fixture-contract-v1", "no_data_reason": "Day 10 accumulation window has not been audited"
+              "region_id": "R20N-078E", "valid_start_utc": null, "valid_end_utc": null, "p_bust": null, "tier": "no_data", "threshold_mm": null, "window_quality": "unavailable", "provenance": "fixture-contract-v1", "no_data_reason": "Day 10 is unavailable because the exact +240–+243-hour accumulation is not evidenced."
             }
           }
         ]

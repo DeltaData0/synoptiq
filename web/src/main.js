@@ -1,48 +1,241 @@
-import { getEvaluation, getHealth, getRegion, getReplay } from "./api.js";
+/**
+ * Synoptiq Web Dashboard — Main Orchestrator.
+ * Coordinates offline Leaflet map, mission control dock, region inspector,
+ * bottom trust strip, and truth-preserving error states.
+ */
+
+import { getAvailableInits, getEvaluation, getHealth, getRegion, getReplay } from "./api.js";
+import { setupControls } from "./controls.js";
+import { clearMapEmptyState, renderInspectorPrompt, renderMapEmptyState } from "./empty_state.js";
 import { createMap } from "./map.js";
 import { renderRegion } from "./region.js";
 import { renderTrust } from "./trust.js";
 import "./styles.css";
 
-const initSelect = document.querySelector("#init");
-const lead = document.querySelector("#lead");
-const leadValue = document.querySelector("#lead-value");
-const provenance = document.querySelector("#provenance");
-const panel = document.querySelector("#region-panel");
-const ribbon = document.querySelector("#fixture-ribbon");
-let current = { init: "2018-08-01", lead: 1 };
+// App state
+const state = {
+  init: "2018-08-01",
+  lead: 1,
+  selectedRegionId: null,
+  currentReplay: null,
+  availableInits: ["2018-08-01"],
+  dataMode: "fixture",
+};
 
-const map = createMap(document.querySelector("#map"), async (regionId) => {
-  try { renderRegion(panel, await getRegion(regionId, current.init, current.lead)); }
-  catch (error) { panel.innerHTML = `<h2>Region details</h2><p>${error.message}</p>`; }
+// DOM references
+const ribbonEl = document.querySelector("#fixture-ribbon");
+const navInitTime = document.querySelector("#nav-init-time");
+const navLeadHorizon = document.querySelector("#nav-lead-horizon");
+const navWindowSemantics = document.querySelector("#nav-window-semantics");
+const navModeBadge = document.querySelector("#nav-mode-badge");
+const navModeText = document.querySelector("#nav-mode-text");
+const controlDockEl = document.querySelector("#control-dock");
+const mapEl = document.querySelector("#map");
+const mapOverlayEl = document.querySelector("#map-overlay");
+const regionPanelEl = document.querySelector("#region-panel");
+const trustEl = document.querySelector("#trust");
+
+let controlsHandle = null;
+
+// Initialize Map
+const map = createMap(mapEl, async (regionId, feature) => {
+  state.selectedRegionId = regionId;
+  await loadRegionDetails(regionId, feature?.properties);
 });
 
-async function loadReplay() {
-  current = { init: initSelect.value, lead: Number(lead.value) };
-  leadValue.value = current.lead;
-  leadValue.textContent = current.lead;
+/**
+ * Loads and displays regional inspector details.
+ */
+async function loadRegionDetails(regionId, fallbackProperties) {
   try {
-    const replay = await getReplay(current.init, current.lead);
-    map.render(replay);
-    provenance.textContent = `Issue ${current.init} 00 UTC · ${replay.model} · ${replay.truth_source}`;
-  } catch (error) {
-    provenance.textContent = error.message;
+    const regionData = await getRegion(regionId, state.init, state.lead);
+    renderRegion(regionPanelEl, {
+      regionData,
+      fallbackProperties,
+      lead: state.lead,
+      onSelectLead: (l) => loadReplay(state.init, l),
+    });
+  } catch (err) {
+    // If the region details endpoint returns 404 (common in fixture where only 1 cell has deep diagnostics),
+    // truthfully render the map feature properties with an honest fallback notice.
+    renderRegion(regionPanelEl, {
+      regionData: null,
+      fallbackProperties: fallbackProperties || { region_id: regionId, lead_day: state.lead },
+      lead: state.lead,
+      onSelectLead: (l) => loadReplay(state.init, l),
+    });
   }
 }
 
+/**
+ * Loads replay GeoJSON for the current init date and lead day.
+ */
+async function loadReplay(newInit, newLead) {
+  state.init = newInit ?? state.init;
+  state.lead = Number(newLead ?? state.lead);
+
+  // Update navigation telemetry
+  if (navInitTime) navInitTime.textContent = `${state.init} 00:00Z`;
+  if (navLeadHorizon) navLeadHorizon.textContent = `Lead Day ${state.lead}`;
+
+  // Update controls state
+  controlsHandle?.updateSelectedLead(state.lead);
+
+  try {
+    const replay = await getReplay(state.init, state.lead);
+    state.currentReplay = replay;
+    clearMapEmptyState(mapOverlayEl);
+
+    // Render features on map
+    map.render(replay, state.lead, state.selectedRegionId);
+
+    // Determine window semantics to display in top bar
+    const firstProps = replay.features?.[0]?.properties;
+    const quality = firstProps?.window_quality;
+    if (navWindowSemantics) {
+      if (quality === "exact") {
+        navWindowSemantics.textContent = "Exact (03:00–03:00 UTC)";
+      } else if (quality === "approximate") {
+        navWindowSemantics.textContent = "Approximate window";
+      } else if (quality === "unavailable") {
+        navWindowSemantics.textContent =
+          Number(state.lead) === 10
+            ? "Unavailable (+240–+243h not evidenced)"
+            : "Unavailable";
+      } else {
+        navWindowSemantics.textContent = "Awaiting replay data";
+      }
+    }
+
+    // Update controls specs
+    controlsHandle?.updateProvenance({
+      model: replay.model,
+      truth_source: replay.truth_source,
+      window_quality: quality,
+      data_mode: state.dataMode,
+      lead: state.lead,
+    });
+
+    // Check if the previously selected region still exists in this lead
+    const matchedFeature = replay.features?.find(
+      (f) => f.properties?.region_id === state.selectedRegionId
+    );
+
+    if (matchedFeature) {
+      await loadRegionDetails(state.selectedRegionId, matchedFeature.properties);
+    } else {
+      state.selectedRegionId = null;
+      renderInspectorPrompt(regionPanelEl);
+    }
+  } catch (error) {
+    // When lead has no replay data (such as Day 2-9 returning 404 in fixture):
+    // CLEAR STALE GEOMETRY IMMEDIATELY! Never show stale polygons.
+    state.currentReplay = null;
+    state.selectedRegionId = null;
+    map.clear(state.lead);
+
+    if (navWindowSemantics) {
+      navWindowSemantics.textContent = "No replay asset for selected lead";
+    }
+
+    controlsHandle?.updateProvenance({
+      model: "No replay asset",
+      truth_source: "Not available",
+      window_quality: null,
+      window_text: "No replay asset for selected lead",
+      data_mode: state.dataMode,
+      lead: state.lead,
+    });
+
+    // Render truthful empty state overlay on the map surface
+    renderMapEmptyState(mapOverlayEl, {
+      lead: state.lead,
+      title: `Replay Data Unavailable: Day ${state.lead}`,
+      message: `The local fixture contract only defines integration slices for Day 1 and Day 10. Per project rules, missing lead data is never fabricated.`,
+      onReset: () => loadReplay(state.init, 1),
+    });
+
+
+    // Truthful inspector notice
+    regionPanelEl.innerHTML = `
+      <div class="inspector-prompt" role="status">
+        <div class="prompt-icon">⚠️</div>
+        <h3>Lead Day ${state.lead} Unavailable</h3>
+        <p class="prompt-text">
+          No historical replay slice exists for Lead Day ${state.lead} in the current fixture store.
+        </p>
+        <div class="prompt-hint">
+          <span>Switch back to Day 1 to inspect active fixture polygons.</span>
+        </div>
+      </div>
+    `;
+  }
+}
+
+/**
+ * Boots the application and loads initial contracts.
+ */
 async function boot() {
   try {
+    // 1. Health check & Mode determination
     const health = await getHealth();
-    ribbon.hidden = health.data_mode !== "fixture";
-    ["2018-08-01"].forEach((date) => initSelect.add(new Option(date, date)));
-    await loadReplay();
-    renderTrust(document.querySelector("#trust"), await getEvaluation());
+    state.dataMode = health.data_mode || "fixture";
+
+    // Non-negotiable fixture warning strip: must remain visible in fixture mode
+    if (ribbonEl) {
+      ribbonEl.hidden = health.data_mode !== "fixture";
+    }
+
+    if (navModeBadge) {
+      navModeBadge.className = `mode-badge mode-${health.data_mode}`;
+    }
+    if (navModeText) {
+      navModeText.textContent = health.data_mode === "fixture" ? "FIXTURE MODE" : "HISTORICAL REPLAY";
+    }
+
+    // 2. Discover available initialization dates from API
+    const inits = await getAvailableInits();
+    state.availableInits = inits;
+    if (!inits.includes(state.init) && inits.length > 0) {
+      state.init = inits[0];
+    }
+
+    // 3. Initialize Control Dock
+    controlsHandle = setupControls(controlDockEl, {
+      inits: state.availableInits,
+      selectedInit: state.init,
+      selectedLead: state.lead,
+      onInitChange: (init) => loadReplay(init, state.lead),
+      onLeadChange: (lead) => loadReplay(state.init, lead),
+    });
+
+    // 4. Initial Inspector Prompt
+    renderInspectorPrompt(regionPanelEl);
+
+    // 5. Load Evaluation & Trust Strip
+    const evaluation = await getEvaluation();
+    renderTrust(trustEl, evaluation);
+
+    // 6. Load Replay
+    await loadReplay(state.init, state.lead);
   } catch (error) {
-    provenance.textContent = `Unable to reach local API: ${error.message}`;
+    console.error("Boot error:", error);
+    if (regionPanelEl) {
+      regionPanelEl.innerHTML = `
+        <div class="inspector-prompt" role="alert">
+          <div class="prompt-icon">❌</div>
+          <h3>API Connection Error</h3>
+          <p class="prompt-text">Unable to connect to local Synoptiq API: ${error.message}</p>
+        </div>
+      `;
+    }
   }
 }
 
-initSelect.addEventListener("change", loadReplay);
-lead.addEventListener("input", loadReplay);
-boot();
+// Window resize handling for Leaflet
+window.addEventListener("resize", () => {
+  map.invalidateSize();
+});
 
+// Boot the app
+boot();

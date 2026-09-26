@@ -1,0 +1,11 @@
+{
+  "type": "FeatureCollection",
+  "name": "fixture_regions_only",
+  "disclaimer": "Illustrative fixture polygons only. Replace with an audited fixed 2° India-land region grid before empirical use.",
+  "features": [
+    {"type": "Feature", "properties": {"region_id": "R20N-078E", "label": "Fixture central-west"}, "geometry": {"type": "Polygon", "coordinates": [[[77,19],[79,19],[79,21],[77,21],[77,19]]] }},
+    {"type": "Feature", "properties": {"region_id": "R22N-080E", "label": "Fixture central"}, "geometry": {"type": "Polygon", "coordinates": [[[79,21],[81,21],[81,23],[79,23],[79,21]]] }},
+    {"type": "Feature", "properties": {"region_id": "R24N-076E", "label": "Fixture west"}, "geometry": {"type": "Polygon", "coordinates": [[[75,23],[77,23],[77,25],[75,25],[75,23]]] }}
+  ]
+}
+

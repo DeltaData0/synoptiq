@@ -1,0 +1,26 @@
+name: synoptiq
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - eccodes
+  - cfgrib
+  - numpy
+  - pandas
+  - xarray
+  - pyarrow
+  - scipy
+  - scikit-learn
+  - lightgbm
+  - shap
+  - fastapi
+  - uvicorn
+  - pydantic
+  - requests
+  - matplotlib
+  - pytest
+  - httpx
+  - pip:
+      - -e .[dev]
+

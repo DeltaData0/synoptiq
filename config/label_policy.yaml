@@ -1,0 +1,14 @@
+floor_mm: 10.0
+coverage_min: 0.80
+seasons:
+  jjas_months: [6, 7, 8, 9]
+  other_label: other
+lead_buckets:
+  - [1, 3]
+  - [4, 7]
+  - [8, 10]
+time_window:
+  status: unaudited
+  description: "Do not label until the IMD day-to-UTC window is signed in docs/data_audit.md."
+  day_10: unavailable
+

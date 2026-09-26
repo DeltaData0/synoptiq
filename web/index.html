@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Synoptiq historical rainfall forecast-bust replay" />
+    <title>Synoptiq — Forecast Bust Replay</title>
+  </head>
+  <body>
+    <main class="shell">
+      <div id="fixture-ribbon" class="fixture-ribbon">FIXTURE — NO MODEL CLAIM</div>
+      <header>
+        <p class="eyebrow">GEFSv12 research prototype</p>
+        <h1>Synoptiq</h1>
+        <p>Historical regional rainfall forecast-bust replay. Not a live warning service.</p>
+      </header>
+      <section class="controls" aria-label="Replay controls">
+        <label>Issue date <select id="init"></select></label>
+        <label>Lead day <input id="lead" type="range" min="1" max="10" value="1" /><output id="lead-value">1</output></label>
+      </section>
+      <section class="provenance" id="provenance" aria-live="polite"></section>
+      <section class="content">
+        <div id="map" aria-label="Regional replay map"></div>
+        <aside id="region-panel"><h2>Region details</h2><p>Select a colored region to inspect the response contract.</p></aside>
+      </section>
+      <section id="trust" class="trust"></section>
+      <footer>Probabilities identify a defined historical research target. Gray means no data; it does not mean zero risk.</footer>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
+

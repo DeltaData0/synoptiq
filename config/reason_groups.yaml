@@ -1,0 +1,6 @@
+moisture: [pwat_mean, rh850_mean]
+circulation: [mslp_min, z500_mean, wind850_mean]
+ensemble_disagreement: [rain_member_std, wet_member_fraction]
+analog_error_memory: [analog_error_mean, analog_bust_fraction]
+lead_season: [lead_day, season]
+

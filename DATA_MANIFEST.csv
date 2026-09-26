@@ -1,0 +1,3 @@
+manifest_id,source,provider,object_key_or_url,retrieved_utc,sha256,bytes,init_utc,variable,member,step_start_h,step_end_h,units,status,notes
+fixture-v1,fixture,repository,data/fixtures/replay_contract.json,,,,2018-08-01T00:00:00Z,illustrative,,,,,fixture,Not source data; no empirical claim
+

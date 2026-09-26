@@ -1,3 +1,4 @@
 manifest_id,source,provider,object_key_or_url,retrieved_utc,sha256,bytes,init_utc,variable,member,step_start_h,step_end_h,units,status,notes
 fixture-v1,fixture,repository,data/fixtures/replay_contract.json,,,,2018-08-01T00:00:00Z,illustrative,,,,,fixture,Not source data; no empirical claim
-
+imd-2017-pilot,imd,IMD Pune,https://imdpune.gov.in/cmpg/Griddata/RF25.php (POST RF25=2017),2026-09-26T19:38:04Z,49786e2d2b661c5d3bcfb3ffd90385c1133ec27a8a04bf272ff2df5029106a9c,25431832,,,RAINFALL,,,,mm,decoded,"Content-Disposition ind2017_rfp25.nc; NetCDF: TIME=365, LATITUDE=129, LONGITUDE=135; missing=4544615"
+imd-2018-pilot,imd,IMD Pune,https://imdpune.gov.in/cmpg/Griddata/RF25.php (POST RF25=2018),2026-09-26T19:38:43Z,26bd53aeb2d6f3f7d39516c41606db005dede474906b33462d1a0caef69cd6ec,25431832,,,RAINFALL,,,,mm,decoded,"Content-Disposition ind2018_rfp25.nc; NetCDF: TIME=365, LATITUDE=129, LONGITUDE=135; missing=4544615"

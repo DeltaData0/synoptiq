@@ -148,7 +148,7 @@ Check a task's box only after producing real, verifiable output for it in this s
 ### Phase 1: Repository contract and data-feasibility gate — [ ] Phase complete
 
 - [ ] D1-01 — Repo, roles, `DECISIONS.md`, issue board, schema contract (Owner: A+F) — done when: Six names, branch rules, sources/manifest template and issue ownership posted.
-- [ ] D1-02 — GEFS real-object pilot per §3 S1–S2 (Owner: A) — done when: GRIB decodes; actual key, member/step/unit/grid/bytes logged.
+- [x] D1-02 — GEFS real-object pilot per §3 S1–S2 (Owner: A) — done when: GRIB decodes; actual key, member/step/unit/grid/bytes logged. Evidence: `docs/data_audit.md` GEFS control precipitation inspection and `DATA_MANIFEST.csv` IDs `gefs-20180801-*`.
 - [x] D1-03 — IMD 2017/18 pilot per §3 S3 (Owner: B) — done when: Both annual files decode; date axis and mask logged. Evidence: `docs/data_audit.md` IMD annual-file pilot and `DATA_MANIFEST.csv` IDs `imd-2017-pilot` / `imd-2018-pilot`.
 - [ ] D1-04 — 03–03/day label and +240/+246 Day-10 audit (Owner: A+B+F) — done when: Signed `data_audit.md`; exact/approximate/unavailable policy frozen. Otherwise empirical-model claim blocked.
 

@@ -9,3 +9,15 @@
 
 Add a dated entry for any changed source, time convention, split, label policy, feature set, or released model.
 
+## Team roster and ticket ownership — 2026-09-27
+
+| Plan role | Team member | Accountable scope |
+| --- | --- | --- |
+| A — data lead | Kanishka Pandey | GEFS inventory/download/decoding, accumulation audit, source manifest |
+| B — verification lead | Aanya Varshney | IMD decoding, land regions, area coverage, labels |
+| C — ML lead | Rudraksh Saini | Baselines, model, calibration, metrics |
+| D — features/explainability lead | Dhruv Makkar | Issue-time features, analogs, grouped TreeSHAP |
+| E — product lead | Aadi Jain | API, dashboard, offline bundle |
+| F — integration/communication lead | Triman Singh Chadha | Acceptance gates, smoke, storyboard, slides, submission package |
+
+Ticket ownership follows the named A–F assignments in Plan §§8–9 and the Submission Roadmap in `AGENTS.md`. GitHub invitations remain pending until each member's exact GitHub username is supplied; names alone are not used to infer account identities.

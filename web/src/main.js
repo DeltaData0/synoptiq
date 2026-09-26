@@ -76,7 +76,7 @@ async function loadReplay(newInit, newLead) {
 
   // Update navigation telemetry
   if (navInitTime) navInitTime.textContent = `${state.init} 00:00Z`;
-  if (navLeadHorizon) navLeadHorizon.textContent = `Lead Day ${state.lead} (+${state.lead * 24}h)`;
+  if (navLeadHorizon) navLeadHorizon.textContent = `Lead Day ${state.lead}`;
 
   // Update controls state
   controlsHandle?.updateSelectedLead(state.lead);
@@ -91,13 +91,19 @@ async function loadReplay(newInit, newLead) {
 
     // Determine window semantics to display in top bar
     const firstProps = replay.features?.[0]?.properties;
+    const quality = firstProps?.window_quality;
     if (navWindowSemantics) {
-      if (firstProps?.window_quality === "unavailable") {
-        navWindowSemantics.textContent = "Unaudited Window (Gray)";
-      } else if (firstProps?.valid_start_utc && firstProps?.valid_end_utc) {
-        navWindowSemantics.textContent = "Exact 03:00–03:00Z";
+      if (quality === "exact") {
+        navWindowSemantics.textContent = "Exact (03:00–03:00 UTC)";
+      } else if (quality === "approximate") {
+        navWindowSemantics.textContent = "Approximate window";
+      } else if (quality === "unavailable") {
+        navWindowSemantics.textContent =
+          Number(state.lead) === 10
+            ? "Unavailable (+240–+243h not evidenced)"
+            : "Unavailable";
       } else {
-        navWindowSemantics.textContent = "Unavailable";
+        navWindowSemantics.textContent = "Awaiting replay data";
       }
     }
 
@@ -105,7 +111,9 @@ async function loadReplay(newInit, newLead) {
     controlsHandle?.updateProvenance({
       model: replay.model,
       truth_source: replay.truth_source,
-      window_quality: firstProps?.window_quality,
+      window_quality: quality,
+      data_mode: state.dataMode,
+      lead: state.lead,
     });
 
     // Check if the previously selected region still exists in this lead
@@ -127,8 +135,17 @@ async function loadReplay(newInit, newLead) {
     map.clear(state.lead);
 
     if (navWindowSemantics) {
-      navWindowSemantics.textContent = "Data Unavailable";
+      navWindowSemantics.textContent = "No replay asset for selected lead";
     }
+
+    controlsHandle?.updateProvenance({
+      model: "No replay asset",
+      truth_source: "Not available",
+      window_quality: null,
+      window_text: "No replay asset for selected lead",
+      data_mode: state.dataMode,
+      lead: state.lead,
+    });
 
     // Render truthful empty state overlay on the map surface
     renderMapEmptyState(mapOverlayEl, {
@@ -137,6 +154,7 @@ async function loadReplay(newInit, newLead) {
       message: `The local fixture contract only defines integration slices for Day 1 and Day 10. Per project rules, missing lead data is never fabricated.`,
       onReset: () => loadReplay(state.init, 1),
     });
+
 
     // Truthful inspector notice
     regionPanelEl.innerHTML = `

@@ -1,10 +1,10 @@
 /**
  * Right Region Inspector component for Synoptiq.
  * Renders regional forecast verification, threshold q90,
- * grouped diagnostic score evidence, reserved lead trajectory, and caveats.
+ * grouped diagnostic evidence, reserved lead trajectory, and caveats.
  */
 
-import { formatMm, formatProbability, formatUtcTime, escapeHtml } from "./format.js";
+import { formatMm, formatProbability, escapeHtml } from "./format.js";
 import { PALETTE } from "./legend.js";
 
 const REASON_GROUPS = [
@@ -25,7 +25,8 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, onSe
   const isFallback = !regionData;
   const regionId = regionData?.region_id || fallbackProperties?.region_id || "Unknown";
   const pBust = regionData?.p_bust ?? fallbackProperties?.p_bust;
-  const tier = fallbackProperties?.tier || (pBust === null ? "no_data" : pBust >= 0.5 ? "high" : pBust >= 0.25 ? "watch" : "low");
+  // Use API tier field only; never derive tier from p_bust
+  const tier = regionData?.tier || fallbackProperties?.tier || "no_data";
   const tierMeta = PALETTE[tier] || PALETTE.no_data;
   const thresholdMm = regionData?.threshold_mm ?? fallbackProperties?.threshold_mm;
   const forecastMm = regionData?.forecast_mm;
@@ -36,6 +37,10 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, onSe
   const reasons = regionData?.reasons || [];
   const caveats = regionData?.caveats || [];
   const provenance = regionData?.provenance || fallbackProperties?.provenance || "fixture-contract-v1";
+  const dataMode = regionData?.data_mode || fallbackProperties?.data_mode || "fixture";
+
+  const isFixtureEvidence =
+    dataMode === "fixture" || reasons.some((r) => r.evidence_layer === "fixture");
 
   // Build Reasons Grouped HTML
   const groupedReasonsHtml = REASON_GROUPS.map((grp) => {
@@ -48,7 +53,7 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, onSe
             <span class="group-name">${escapeHtml(grp.label)}</span>
             <span class="group-count">0 signals</span>
           </div>
-          <p class="group-empty-note">No active attribution signal reported for this group.</p>
+          <p class="group-empty-note">Not provided for this replay.</p>
         </div>
       `;
     }
@@ -66,6 +71,7 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, onSe
               const isIncrease = r.direction?.toLowerCase().includes("increase");
               const dirClass = isIncrease ? "dir-increase" : "dir-decrease";
               const dirIcon = isIncrease ? "▲" : "▼";
+              const isFixtureLayer = r.evidence_layer === "fixture";
 
               return `
                 <div class="reason-card">
@@ -78,7 +84,9 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, onSe
                   <div class="reason-val-row font-mono">
                     <span class="val-label">Value:</span>
                     <span class="val-num">${r.value !== null && r.value !== undefined ? escapeHtml(r.value) : "—"}</span>
-                    <span class="reason-layer-badge">${escapeHtml(r.evidence_layer)}</span>
+                    <span class="reason-layer-badge">
+                      ${isFixtureLayer ? "fixture (illustrative only — no model claim)" : escapeHtml(r.evidence_layer)}
+                    </span>
                   </div>
                   <div class="reason-caption">${escapeHtml(r.caption)}</div>
                 </div>
@@ -96,7 +104,7 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, onSe
       <div class="inspector-header">
         <div class="inspector-badge-row">
           <span class="inspector-region-id font-mono">${escapeHtml(regionId)}</span>
-          <span class="inspector-lead-tag font-mono">Day ${escapeHtml(lead)} (+${Number(lead) * 24}h)</span>
+          <span class="inspector-lead-tag font-mono">Lead Day ${escapeHtml(lead)}</span>
           <span class="tier-pill tier-${tier}">${escapeHtml(tierMeta.label)}</span>
         </div>
         <div class="probability-headline">
@@ -153,8 +161,17 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, onSe
           </div>
           <div class="telemetry-cell">
             <span class="t-lbl">Window Semantics</span>
-            <span class="t-val font-mono ${windowQuality === "unavailable" ? "val-warning" : ""}">${escapeHtml(windowQuality)}</span>
+            <span class="t-val font-mono ${windowQuality === "unavailable" ? "val-warning" : windowQuality === "approximate" ? "val-approx" : ""}">${escapeHtml(
+              windowQuality === "exact"
+                ? "Exact"
+                : windowQuality === "approximate"
+                ? "Approximate"
+                : windowQuality === "unavailable"
+                ? "Unavailable"
+                : "Awaiting replay data"
+            )}</span>
           </div>
+
           ${
             confidence !== null && confidence !== undefined
               ? `
@@ -195,20 +212,24 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, onSe
           <div class="trajectory-notice">
             <span class="trajectory-notice-title">Multi-lead trajectory reserved</span>
             <span class="trajectory-notice-desc">
-              Continuous lead evolution requires M4 replay export. Synthesized trajectory data is strictly prohibited by project protocol.
+              Continuous lead trajectory requires a future replay artifact containing multi-lead values. Synthesized trajectory data is strictly prohibited.
             </span>
           </div>
         </div>
       </div>
 
-      <!-- Diagnostic Signals / Reason Groups -->
+      <!-- Diagnostic Evidence / Reason Groups -->
       <div class="inspector-section">
         <div class="section-header-row">
-          <span class="section-title">DIAGNOSTIC SCORE EVIDENCE</span>
-          <span class="evidence-tag">SHAP ATTRIBUTION</span>
+          <span class="section-title">DIAGNOSTIC EVIDENCE</span>
+          <span class="evidence-tag">Diagnostic evidence</span>
         </div>
         <div class="shap-disclaimer">
-          ⚠️ Feature attribution scores indicate statistical model sensitivity, not a proven meteorological causal mechanism.
+          ${
+            isFixtureEvidence
+              ? "⚠️ Illustrative fixture example only: this reason payload is an integration test fixture and makes no model or meteorological claim."
+              : "Score evidence: feature attribution reflects model-score sensitivity, not a proven meteorological causal mechanism."
+          }
         </div>
         <div class="reasons-accordion">
           ${groupedReasonsHtml}
@@ -220,7 +241,7 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, onSe
         <div class="section-title">CONTRACT &amp; CAVEATS</div>
         <ul class="caveats-list">
           ${caveats.map((c) => `<li>${escapeHtml(c)}</li>`).join("")}
-          <li>Data mode: <code class="font-mono">${escapeHtml(regionData?.data_mode || "fixture")}</code></li>
+          <li>Data mode: <code class="font-mono">${escapeHtml(dataMode)}</code></li>
           <li>Provenance: <code class="font-mono">${escapeHtml(provenance)}</code></li>
         </ul>
       </div>

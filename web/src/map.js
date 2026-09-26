@@ -5,7 +5,7 @@
 
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { formatProbability, formatUtcTime, formatWindowInterval, escapeHtml } from "./format.js";
+import { formatProbability, formatUtcTime, escapeHtml } from "./format.js";
 import { getTierColor, getTierStroke, PALETTE } from "./legend.js";
 
 export function createMap(containerElement, onSelectRegion) {
@@ -32,11 +32,11 @@ export function createMap(containerElement, onSelectRegion) {
     hudElement.innerHTML = `
       <div class="hud-item hud-lead">
         <span class="hud-label">TARGET LEAD</span>
-        <span class="hud-val" id="hud-lead-val">Day 1 (+24h)</span>
+        <span class="hud-val" id="hud-lead-val">Lead Day 1</span>
       </div>
       <div class="hud-item hud-window">
         <span class="hud-label">VALID INTERVAL</span>
-        <span class="hud-val" id="hud-window-val">—</span>
+        <span class="hud-val" id="hud-window-val">Awaiting replay data</span>
       </div>
       <div class="hud-item hud-mode">
         <span class="hud-label">STATUS</span>
@@ -85,16 +85,21 @@ export function createMap(containerElement, onSelectRegion) {
     const hudWindow = containerElement.querySelector("#hud-window-val");
     const hudMode = containerElement.querySelector("#hud-mode-val");
 
-    if (hudLead) hudLead.textContent = `Day ${activeLead} (+${activeLead * 24}h)`;
+    if (hudLead) hudLead.textContent = `Lead Day ${activeLead}`;
     if (hudWindow) {
       if (firstFeature?.valid_start_utc && firstFeature?.valid_end_utc) {
         hudWindow.textContent = `${formatUtcTime(firstFeature.valid_start_utc)} → ${formatUtcTime(
           firstFeature.valid_end_utc
         )}`;
+      } else if (firstFeature?.window_quality === "approximate") {
+        hudWindow.textContent = "Approximate window";
       } else if (firstFeature?.window_quality === "unavailable") {
-        hudWindow.textContent = "Accumulation window unaudited";
+        hudWindow.textContent =
+          Number(activeLead) === 10
+            ? "Unavailable (+240–+243h not evidenced)"
+            : "Interval unavailable";
       } else {
-        hudWindow.textContent = "Window unavailable";
+        hudWindow.textContent = "Interval unavailable";
       }
     }
     if (hudMode) {
@@ -130,8 +135,17 @@ export function createMap(containerElement, onSelectRegion) {
               </div>
               <div class="map-tooltip-stat">
                 <span class="stat-lbl">Window:</span>
-                <span class="stat-val font-mono">${escapeHtml(p.window_quality)}</span>
+                <span class="stat-val font-mono">${escapeHtml(
+                  p.window_quality === "exact"
+                    ? "Exact"
+                    : p.window_quality === "approximate"
+                    ? "Approximate"
+                    : p.window_quality === "unavailable"
+                    ? "Unavailable"
+                    : "Awaiting replay data"
+                )}</span>
               </div>
+
             </div>
             ${reasonHtml}
           </div>
@@ -187,8 +201,8 @@ export function createMap(containerElement, onSelectRegion) {
     const hudWindow = containerElement.querySelector("#hud-window-val");
     const hudMode = containerElement.querySelector("#hud-mode-val");
 
-    if (hudLead && lead) hudLead.textContent = `Day ${lead} (+${lead * 24}h)`;
-    if (hudWindow) hudWindow.textContent = "Data unavailable";
+    if (hudLead && lead) hudLead.textContent = `Lead Day ${lead}`;
+    if (hudWindow) hudWindow.textContent = "No replay asset for selected lead";
     if (hudMode) hudMode.textContent = "NO DATA";
   }
 

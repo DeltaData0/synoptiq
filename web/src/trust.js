@@ -52,8 +52,9 @@ export function renderTrust(element, evaluation) {
           </a>
         </div>
         <div class="trust-sub">
-          Synoptiq &bull; SIH 2024
+          Synoptiq &bull; SIH 26079
         </div>
+
       </div>
     </div>
   `;

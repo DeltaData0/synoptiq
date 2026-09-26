@@ -68,11 +68,12 @@ export function renderInspectorPrompt(container) {
       </div>
       <h3>Regional Inspector</h3>
       <p class="prompt-text">
-        Select any 2&deg; grid cell on the map to inspect issue-time forecast telemetry, regional threshold, and diagnostic score evidence.
+        Select any 2&deg; grid cell on the map to inspect issue-time forecast telemetry, regional threshold, and diagnostic evidence.
       </p>
       <div class="prompt-hint">
-        <span>&bull; R20N-078E (Fixture Central-West) has active diagnostic reasons.</span>
+        <span>&bull; R20N-078E (Fixture Central-West) has illustrative fixture reasons.</span>
       </div>
     </div>
+
   `;
 }

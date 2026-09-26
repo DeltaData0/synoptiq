@@ -70,6 +70,29 @@ export function formatUtcTime(isoString) {
  * @returns {string}
  */
 export function formatWindowInterval(startUtc, endUtc) {
-  if (!startUtc || !endUtc) return "Accumulation window unaudited";
+  if (!startUtc || !endUtc) return "Interval unavailable";
   return `${formatUtcTime(startUtc)} → ${formatUtcTime(endUtc)}`;
+}
+
+/**
+ * Formats window quality semantics accurately:
+ * - exact -> "Exact (03:00–03:00 UTC)"
+ * - approximate -> "Approximate window"
+ * - unavailable -> "Unavailable (exact +240–+243h not evidenced)" for lead 10, else "Unavailable"
+ * - missing/null -> "Awaiting replay data"
+ * @param {string|null|undefined} quality
+ * @param {number|null|undefined} lead
+ * @returns {string}
+ */
+export function formatWindowQuality(quality, lead) {
+  if (!quality) return "Awaiting replay data";
+  if (quality === "exact") return "Exact (03:00–03:00 UTC)";
+  if (quality === "approximate") return "Approximate window";
+  if (quality === "unavailable") {
+    if (Number(lead) === 10) {
+      return "Unavailable (exact +240–+243h not evidenced)";
+    }
+    return "Unavailable";
+  }
+  return String(quality);
 }

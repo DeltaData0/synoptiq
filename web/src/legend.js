@@ -1,35 +1,32 @@
 /**
  * Risk tier legend and palette definition for Synoptiq.
+ * Renders server-reported risk tiers without deriving cutoffs on the client.
  */
 
 export const PALETTE = {
   low: {
     fill: "#0d9488",
     stroke: "#2dd4bf",
-    label: "Low Risk",
-    range: "< 25% P(bust)",
-    description: "Model forecast unlikely to exceed regional 90th percentile error floor.",
+    label: "Low",
+    description: "Server-reported low risk tier.",
   },
   watch: {
     fill: "#d97706",
     stroke: "#fbbf24",
     label: "Watch",
-    range: "25% – 50% P(bust)",
-    description: "Elevated probability of forecast bust; active monitoring recommended.",
+    description: "Server-reported watch risk tier.",
   },
   high: {
     fill: "#dc2626",
     stroke: "#f87171",
-    label: "High Risk",
-    range: "≥ 50% P(bust)",
-    description: "High probability that 24h rainfall error exceeds regional threshold.",
+    label: "High",
+    description: "Server-reported high risk tier.",
   },
   no_data: {
     fill: "#475569",
     stroke: "#94a3b8",
-    label: "No Data / Unaudited",
-    range: "Unavailable",
-    description: "Accumulation interval not audited or outside land domain. Never implies 0% risk.",
+    label: "No data",
+    description: "Server-reported unavailable or no-data tier. Never implies 0% risk.",
   },
 };
 
@@ -66,7 +63,6 @@ export function renderLegend(container) {
   container.innerHTML = `
     <div class="legend-header">
       <span class="legend-title">RISK TIERS</span>
-      <span class="legend-sub">P(error &gt; q90)</span>
     </div>
     <div class="legend-items">
       ${tiers
@@ -76,7 +72,6 @@ export function renderLegend(container) {
           <span class="legend-swatch" style="background-color: ${t.fill}; border-color: ${t.stroke};"></span>
           <div class="legend-meta">
             <span class="legend-label">${t.label}</span>
-            <span class="legend-range">${t.range}</span>
           </div>
         </div>
       `,
@@ -84,7 +79,7 @@ export function renderLegend(container) {
         .join("")}
     </div>
     <div class="legend-caption">
-      Bust threshold: regional &times; seasonal train q90 with 10 mm/day floor.
+      Server-reported risk tiers for historical replay.
     </div>
   `;
 }

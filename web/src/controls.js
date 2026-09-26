@@ -38,7 +38,7 @@ export function setupControls(container, { inits, selectedInit, selectedLead, on
       <div class="control-group">
         <div class="control-label-row">
           <label class="control-label" id="lead-label">FORECAST LEAD HORIZON</label>
-          <span class="lead-active-pill" id="lead-active-display">Day ${selectedLead}</span>
+          <span class="lead-active-pill" id="lead-active-display">Lead Day ${selectedLead}</span>
         </div>
 
         <div class="lead-button-grid" role="group" aria-labelledby="lead-label">
@@ -47,8 +47,8 @@ export function setupControls(container, { inits, selectedInit, selectedLead, on
               const isSelected = day === selectedLead;
               const isDay10 = day === 10;
               const tooltip = isDay10
-                ? "Day 10 accumulation window (+240–+243h) has not been audited; rendered gray/unavailable per D1-04 audit."
-                : `Lead Day ${day} (+${day * 24}h)`;
+                ? "Day 10 is unavailable because the exact +240–+243-hour accumulation is not evidenced."
+                : `Lead Day ${day}`;
 
               return `
                 <button
@@ -66,7 +66,7 @@ export function setupControls(container, { inits, selectedInit, selectedLead, on
             .join("")}
         </div>
         <p class="lead-hint">
-          Click Day 10 to inspect the audited unavailable window state. Days 2–9 test fixture absence.
+          Click Day 10 to inspect the audited unavailable state. Days 2–9 test fixture absence.
         </p>
       </div>
     </div>
@@ -88,11 +88,11 @@ export function setupControls(container, { inits, selectedInit, selectedLead, on
         </div>
         <div>
           <dt>Spatial Unit</dt>
-          <dd>Fixed 2&deg; India-Land Grid</dd>
+          <dd id="spec-domain">Fixture geometry; final land grid pending D1-05</dd>
         </div>
         <div>
-          <dt>Window Policy</dt>
-          <dd id="spec-window">Exact D1–9; D10 Unaudited</dd>
+          <dt>Window Semantics</dt>
+          <dd id="spec-window">Awaiting replay data</dd>
         </div>
       </dl>
     </div>
@@ -122,7 +122,7 @@ export function setupControls(container, { inits, selectedInit, selectedLead, on
   return {
     updateSelectedLead(lead) {
       const display = container.querySelector("#lead-active-display");
-      if (display) display.textContent = `Day ${lead}`;
+      if (display) display.textContent = `Lead Day ${lead}`;
 
       const buttons = container.querySelectorAll(".btn-lead");
       buttons.forEach((btn) => {
@@ -141,14 +141,34 @@ export function setupControls(container, { inits, selectedInit, selectedLead, on
           .join("");
       }
     },
-    updateProvenance({ model, truth_source, window_quality }) {
+    updateProvenance({ model, truth_source, window_quality, window_text, data_mode, lead }) {
       const specModel = container.querySelector("#spec-model");
       const specTruth = container.querySelector("#spec-truth");
       const specWindow = container.querySelector("#spec-window");
+      const specDomain = container.querySelector("#spec-domain");
       if (specModel && model) specModel.textContent = model;
       if (specTruth && truth_source) specTruth.textContent = truth_source;
-      if (specWindow && window_quality) {
-        specWindow.textContent = window_quality === "exact" ? "Exact 03:00–03:00 UTC" : "Unavailable (Unaudited)";
+      if (specDomain) {
+        specDomain.textContent =
+          data_mode === "historical_replay"
+            ? "Fixed 2° India-Land Grid"
+            : "Fixture geometry; final land grid pending D1-05";
+      }
+      if (specWindow) {
+        if (window_text) {
+          specWindow.textContent = window_text;
+        } else if (window_quality === "exact") {
+          specWindow.textContent = "Exact (03:00–03:00 UTC)";
+        } else if (window_quality === "approximate") {
+          specWindow.textContent = "Approximate window";
+        } else if (window_quality === "unavailable") {
+          specWindow.textContent =
+            Number(lead) === 10
+              ? "Unavailable (exact +240–+243h not evidenced)"
+              : "Unavailable";
+        } else {
+          specWindow.textContent = "Awaiting replay data";
+        }
       }
     },
   };

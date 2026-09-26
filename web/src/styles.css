@@ -1082,6 +1082,11 @@ html, body {
   color: #f59e0b !important;
 }
 
+.val-approx {
+  color: var(--accent-cyan) !important;
+}
+
+
 /* Reserved Trajectory Card */
 .trajectory-card {
   background: var(--bg-surface-elevated);

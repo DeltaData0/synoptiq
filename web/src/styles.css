@@ -665,9 +665,318 @@ html, body {
   color: var(--accent-cyan);
 }
 
+/* Layer View Mode Switcher */
+.map-view-switcher {
+  position: absolute;
+  top: auto;
+  bottom: 1rem;
+  right: 3.5rem;
+  z-index: 500;
+  display: flex;
+  gap: 4px;
+  width: min(360px, calc(100% - 2rem));
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  background: rgba(11, 15, 25, 0.9);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.btn-view-mode {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-view-mode:hover {
+  color: var(--text-bright);
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.btn-view-mode.active {
+  background: #0284c7;
+  border-color: #38bdf8;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+}
+
+.switcher-sep {
+  display: inline-block;
+  width: 1px;
+  height: 16px;
+  background: var(--border-medium);
+  margin: 0 3px;
+  align-self: center;
+}
+
+.btn-tool-toggle {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-tool-toggle:hover {
+  color: var(--text-bright);
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.btn-tool-toggle.active {
+  background: rgba(14, 165, 233, 0.22);
+  border-color: #38bdf8;
+  color: #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+}
+
+.btn-icon {
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.leaflet-particle-canvas,
+.leaflet-heatmap-canvas {
+  pointer-events: none !important;
+}
+
+/* Geographic Landmark City Anchors */
+.map-city-anchor {
+  pointer-events: none;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+}
+
+.city-dot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  background: #38bdf8;
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.9);
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+
+.city-label {
+  font-size: 9px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: rgba(226, 232, 240, 0.78);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
+  letter-spacing: 0.5px;
+}
+
+/* Maritime Basin Watermarks */
+.map-watermark-anchor {
+  pointer-events: none;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 3.5px;
+  color: rgba(30, 58, 95, 0.75);
+  text-transform: uppercase;
+  user-select: none;
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* Coordinate Graticule Tags */
+.map-coord-tag {
+  pointer-events: none;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 600;
+  color: rgba(148, 163, 184, 0.6);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
+  user-select: none;
+}
+
+/* Tactical North Compass Rose */
+.map-compass-rose {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 500;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(11, 15, 25, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+/* Live Geospatial Cursor Coordinates Readout */
+.map-coords-readout {
+  position: absolute;
+  bottom: 2.2rem;
+  left: 1rem;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(11, 15, 25, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem 0.6rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.coord-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+}
+
+.coord-pill:not(:last-child) {
+  border-right: 1px solid var(--border-subtle);
+  padding-right: 0.5rem;
+}
+
+.coord-k {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.55rem;
+  color: var(--accent-cyan);
+  letter-spacing: 0.05em;
+}
+
+.coord-v {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Radar Ping Animation for City Anchors */
+.city-ping {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+
+.city-core {
+  width: 4px;
+  height: 4px;
+  background: #38bdf8;
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.9);
+  position: relative;
+  z-index: 2;
+}
+
+.primary-hub .city-core {
+  background: #f8fafc;
+  box-shadow: 0 0 8px rgba(248, 250, 252, 1);
+}
+
+.city-ping::before {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 1px solid rgba(56, 189, 248, 0.5);
+  animation: ping 2.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes ping {
+  75%, 100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+/* Tooltip Meter Bar */
+.tooltip-meter-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(30, 41, 59, 0.8);
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 0.35rem 0;
+}
+
+.tooltip-meter-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.tooltip-meter-fill.tier-high {
+  background: linear-gradient(90deg, #f59e0b, #ef4444);
+}
+
+.tooltip-meter-fill.tier-watch {
+  background: #f59e0b;
+}
+
+.tooltip-meter-fill.tier-low {
+  background: #10b981;
+}
+
+/* Leaflet Scale Bar Dark Mode Override */
+.leaflet-control-scale {
+  margin-left: 1rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.leaflet-control-scale-line {
+  background: rgba(11, 15, 25, 0.88) !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+  border: 1px solid var(--border-medium) !important;
+  border-top: none !important;
+  color: var(--accent-cyan) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 8px !important;
+  font-weight: 700 !important;
+  padding: 1px 6px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+}
+
 /* Leaflet Custom UI Overrides */
 .leaflet-container {
-  background: #070a12 !important;
+  background: #050811 !important;
   font-family: var(--font-sans) !important;
 }
 
@@ -793,6 +1102,48 @@ html, body {
   backdrop-filter: blur(4px);
   pointer-events: auto;
   animation: fadeIn 0.2s ease-in;
+}
+
+.map-loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 610;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  color: var(--text-secondary);
+  background: rgba(7, 10, 18, 0.58);
+  backdrop-filter: blur(2px);
+  pointer-events: auto;
+}
+
+.map-loading-overlay strong,
+.map-loading-overlay span:not(.loading-orbit) {
+  display: block;
+}
+
+.map-loading-overlay strong {
+  color: var(--text-bright);
+  font-size: 0.82rem;
+}
+
+.map-loading-overlay span:not(.loading-orbit) {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.loading-orbit {
+  width: 22px;
+  height: 22px;
+  border: 2px solid rgba(56, 189, 248, 0.22);
+  border-top-color: var(--accent-cyan);
+  border-radius: 50%;
+  animation: loading-spin 0.75s linear infinite;
+}
+
+@keyframes loading-spin {
+  to { transform: rotate(360deg); }
 }
 
 @keyframes fadeIn {
@@ -1066,6 +1417,10 @@ html, body {
   gap: 0.15rem;
 }
 
+.telemetry-cell-wide {
+  grid-column: 1 / -1;
+}
+
 .t-lbl {
   font-size: 0.68rem;
   color: var(--text-muted);
@@ -1122,6 +1477,35 @@ html, body {
   font-size: 0.68rem;
   color: var(--text-muted);
   line-height: 1.35;
+}
+
+.analog-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.analog-card,
+.empty-evidence {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.7rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface-elevated);
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+}
+
+.analog-card strong {
+  color: var(--accent-cyan);
+  font-size: 0.7rem;
+}
+
+.empty-evidence {
+  color: var(--text-muted);
+  font-style: italic;
 }
 
 /* Diagnostic Signals Accordion / Grouped Reasons */
@@ -1342,6 +1726,33 @@ html, body {
   color: var(--text-muted);
 }
 
+.metric-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.metric-card {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  padding: 0.15rem 0.35rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--bg-abyssal);
+}
+
+.metric-card small {
+  color: var(--text-muted);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+}
+
+.metric-card strong {
+  color: var(--text-primary);
+  font-size: 0.7rem;
+}
+
 .trust-message {
   font-size: 0.75rem;
   color: var(--text-secondary);
@@ -1416,6 +1827,11 @@ html, body {
   .workspace {
     grid-template-columns: 260px minmax(0, 1fr) 340px;
   }
+
+  .map-view-switcher {
+    right: 1rem;
+    width: min(320px, calc(100% - 2rem));
+  }
 }
 
 @media (max-width: 960px) {
@@ -1478,6 +1894,16 @@ html, body {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.35rem;
+  }
+
+  .map-view-switcher {
+    top: auto;
+    bottom: 0.75rem;
+    left: 0.75rem;
+    right: 0.75rem;
+    width: auto;
+    max-width: calc(100% - 1.5rem);
+    flex-wrap: wrap;
   }
 
   .hud-item:not(:last-child) {

@@ -4,7 +4,7 @@
  * grouped diagnostic evidence, reserved lead trajectory, and caveats.
  */
 
-import { formatMm, formatProbability, escapeHtml } from "./format.js";
+import { formatMm, formatProbability, formatWindowInterval, escapeHtml } from "./format.js";
 import { PALETTE } from "./legend.js";
 
 const REASON_GROUPS = [
@@ -38,6 +38,9 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, onSe
   const caveats = regionData?.caveats || [];
   const provenance = regionData?.provenance || fallbackProperties?.provenance || "fixture-contract-v1";
   const dataMode = regionData?.data_mode || fallbackProperties?.data_mode || "fixture";
+  const validStartUtc = fallbackProperties?.valid_start_utc;
+  const validEndUtc = fallbackProperties?.valid_end_utc;
+  const analogs = Array.isArray(regionData?.analogs) ? regionData.analogs : [];
 
   const isFixtureEvidence =
     dataMode === "fixture" || reasons.some((r) => r.evidence_layer === "fixture");
@@ -136,7 +139,7 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, onSe
         <div class="inspector-alert alert-info">
           <div class="alert-icon">ℹ️</div>
           <div class="alert-body">
-            Full diagnostic payload is unavailable for this cell in the fixture asset. Showing verified map feature telemetry.
+            Full regional diagnostics are not supplied for this replay selection. Showing the replay fields that are available.
           </div>
         </div>
       `
@@ -172,6 +175,11 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, onSe
             )}</span>
           </div>
 
+          <div class="telemetry-cell telemetry-cell-wide">
+            <span class="t-lbl">Verified UTC Interval</span>
+            <span class="t-val font-mono">${escapeHtml(formatWindowInterval(validStartUtc, validEndUtc))}</span>
+          </div>
+
           ${
             confidence !== null && confidence !== undefined
               ? `
@@ -185,36 +193,37 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, onSe
         </div>
       </div>
 
-      <!-- Reserved Lead Trajectory Graph Panel -->
+      <!-- Multi-lead values are intentionally not inferred from a single lead response. -->
       <div class="inspector-section">
-        <div class="section-title">LEAD TRAJECTORY (DAY 1 – 10)</div>
+        <div class="section-title">LEAD TRAJECTORY</div>
         <div class="trajectory-card">
-          <div class="trajectory-chart-mock" aria-hidden="true">
-            <svg viewBox="0 0 320 70" class="trajectory-svg">
-              <line x1="20" y1="55" x2="300" y2="55" stroke="rgba(148,163,184,0.3)" stroke-width="1" stroke-dasharray="3,3" />
-              <line x1="20" y1="20" x2="300" y2="20" stroke="rgba(148,163,184,0.2)" stroke-width="1" stroke-dasharray="2,2" />
-              <!-- Lead dots placeholder -->
-              <circle cx="35" cy="35" r="4" fill="#38bdf8" />
-              <text x="35" y="65" text-anchor="middle" font-size="8" fill="#94a3b8" font-family="monospace">D1</text>
-              <circle cx="65" cy="55" r="2.5" fill="#475569" />
-              <text x="65" y="65" text-anchor="middle" font-size="8" fill="#64748b" font-family="monospace">D2</text>
-              <circle cx="95" cy="55" r="2.5" fill="#475569" />
-              <circle cx="125" cy="55" r="2.5" fill="#475569" />
-              <circle cx="155" cy="55" r="2.5" fill="#475569" />
-              <circle cx="185" cy="55" r="2.5" fill="#475569" />
-              <circle cx="215" cy="55" r="2.5" fill="#475569" />
-              <circle cx="245" cy="55" r="2.5" fill="#475569" />
-              <circle cx="275" cy="55" r="2.5" fill="#475569" />
-              <circle cx="295" cy="55" r="3" fill="#64748b" stroke="#94a3b8" />
-              <text x="295" y="65" text-anchor="middle" font-size="8" fill="#64748b" font-family="monospace">D10</text>
-            </svg>
-          </div>
           <div class="trajectory-notice">
-            <span class="trajectory-notice-title">Multi-lead trajectory reserved</span>
+            <span class="trajectory-notice-title">One lead is currently selected</span>
             <span class="trajectory-notice-desc">
-              Continuous lead trajectory requires a future replay artifact containing multi-lead values. Synthesized trajectory data is strictly prohibited.
+              A lead curve appears only when the frozen region artifact supplies values across leads. This panel never infers intermediate values.
             </span>
           </div>
+        </div>
+      </div>
+
+      <div class="inspector-section">
+        <div class="section-header-row">
+          <span class="section-title">COMPARABLE EARLIER CASES</span>
+          <span class="evidence-tag">Earlier-only</span>
+        </div>
+        <div class="analog-list">
+          ${
+            analogs.length
+              ? analogs
+                  .map((analog) => {
+                    const analogInit = analog.init_utc || analog.init || "Earlier case";
+                    const analogError = analog.error_mm ?? analog.error ?? null;
+                    const outcome = analog.bust === true ? "Bust" : analog.bust === false ? "No bust" : "Outcome unavailable";
+                    return `<div class="analog-card"><strong class="font-mono">${escapeHtml(analogInit)}</strong><span>${escapeHtml(outcome)}${analogError === null ? "" : ` · ${escapeHtml(formatMm(analogError))} error`}</span></div>`;
+                  })
+                  .join("")
+              : `<div class="empty-evidence">No earlier comparable cases were supplied for this replay.</div>`
+          }
         </div>
       </div>
 

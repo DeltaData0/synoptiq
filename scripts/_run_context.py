@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def emit(command: str, output: str, split: str = "not-applicable", seed: int = 42) -> None:
+def emit(command: str, output: str, split: str = "not-applicable", seed: int = 42, manifest_id: str = "fixture-v1") -> None:
     try:
         commit = subprocess.check_output(
             ["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, text=True
@@ -16,7 +16,7 @@ def emit(command: str, output: str, split: str = "not-applicable", seed: int = 4
     except subprocess.CalledProcessError:
         commit = "uncommitted"
     print(f"command={command}")
-    print("manifest_id=fixture-v1")
+    print(f"manifest_id={manifest_id}")
     print(f"git_commit={commit}")
     print(f"split={split}")
     print(f"seed={seed}")

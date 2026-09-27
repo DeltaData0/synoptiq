@@ -6,7 +6,12 @@
 
 import { getAvailableInits, getEvaluation, getHealth, getRegion, getReplay } from "./api.js";
 import { setupControls } from "./controls.js";
-import { clearMapEmptyState, renderInspectorPrompt, renderMapEmptyState } from "./empty_state.js";
+import {
+  clearMapEmptyState,
+  renderInspectorPrompt,
+  renderMapEmptyState,
+  renderMapLoadingState,
+} from "./empty_state.js";
 import { createMap } from "./map.js";
 import { renderRegion } from "./region.js";
 import { renderTrust } from "./trust.js";
@@ -37,11 +42,26 @@ const trustEl = document.querySelector("#trust");
 
 let controlsHandle = null;
 
+function updateModeChrome(dataMode) {
+  state.dataMode = dataMode || state.dataMode;
+  if (ribbonEl) ribbonEl.hidden = state.dataMode !== "fixture";
+  if (navModeBadge) navModeBadge.className = `mode-badge mode-${state.dataMode}`;
+  if (navModeText) {
+    navModeText.textContent = state.dataMode === "fixture" ? "FIXTURE MODE" : "HISTORICAL REPLAY";
+  }
+}
+
 // Initialize Map
-const map = createMap(mapEl, async (regionId, feature) => {
-  state.selectedRegionId = regionId;
-  await loadRegionDetails(regionId, feature?.properties);
-});
+const map = createMap(
+  mapEl,
+  async (regionId, feature) => {
+    state.selectedRegionId = regionId;
+    await loadRegionDetails(regionId, feature?.properties);
+  },
+  (mode) => {
+    controlsHandle?.updateLegend(mode);
+  }
+);
 
 /**
  * Loads and displays regional inspector details.
@@ -80,10 +100,12 @@ async function loadReplay(newInit, newLead) {
 
   // Update controls state
   controlsHandle?.updateSelectedLead(state.lead);
+  renderMapLoadingState(mapOverlayEl, { lead: state.lead });
 
   try {
     const replay = await getReplay(state.init, state.lead);
     state.currentReplay = replay;
+    updateModeChrome(replay.data_mode);
     clearMapEmptyState(mapOverlayEl);
 
     // Render features on map
@@ -112,7 +134,7 @@ async function loadReplay(newInit, newLead) {
       model: replay.model,
       truth_source: replay.truth_source,
       window_quality: quality,
-      data_mode: state.dataMode,
+      data_mode: replay.data_mode,
       lead: state.lead,
     });
 
@@ -128,8 +150,7 @@ async function loadReplay(newInit, newLead) {
       renderInspectorPrompt(regionPanelEl);
     }
   } catch (error) {
-    // When lead has no replay data (such as Day 2-9 returning 404 in fixture):
-    // CLEAR STALE GEOMETRY IMMEDIATELY! Never show stale polygons.
+    // A failed request must never leave geometry from a prior selection visible.
     state.currentReplay = null;
     state.selectedRegionId = null;
     map.clear(state.lead);
@@ -147,11 +168,15 @@ async function loadReplay(newInit, newLead) {
       lead: state.lead,
     });
 
-    // Render truthful empty state overlay on the map surface
+    const isDayTen = Number(state.lead) === 10;
     renderMapEmptyState(mapOverlayEl, {
       lead: state.lead,
-      title: `Replay Data Unavailable: Day ${state.lead}`,
-      message: `The local fixture contract only defines integration slices for Day 1 and Day 10. Per project rules, missing lead data is never fabricated.`,
+      title: isDayTen ? "Day 10 Is Unavailable" : `Replay Data Unavailable: Day ${state.lead}`,
+      message: isDayTen
+        ? "The exact Day 10 accumulation interval is not evidenced, so Synoptiq returns no risk score."
+        : error.status === 404
+        ? "No frozen replay artifact exists for this issue date and lead. Synoptiq does not substitute or fabricate a result."
+        : `The replay could not be loaded: ${error.message}`,
       onReset: () => loadReplay(state.init, 1),
     });
 
@@ -160,12 +185,12 @@ async function loadReplay(newInit, newLead) {
     regionPanelEl.innerHTML = `
       <div class="inspector-prompt" role="status">
         <div class="prompt-icon">⚠️</div>
-        <h3>Lead Day ${state.lead} Unavailable</h3>
+        <h3>${isDayTen ? "Day 10 Unavailable" : `Lead Day ${state.lead} Unavailable`}</h3>
         <p class="prompt-text">
-          No historical replay slice exists for Lead Day ${state.lead} in the current fixture store.
+          ${isDayTen ? "No Day 10 probability is shown without an evidenced exact accumulation interval." : "No frozen replay artifact exists for this selection."}
         </p>
         <div class="prompt-hint">
-          <span>Switch back to Day 1 to inspect active fixture polygons.</span>
+          <span>Choose another available lead or issue date.</span>
         </div>
       </div>
     `;
@@ -179,19 +204,7 @@ async function boot() {
   try {
     // 1. Health check & Mode determination
     const health = await getHealth();
-    state.dataMode = health.data_mode || "fixture";
-
-    // Non-negotiable fixture warning strip: must remain visible in fixture mode
-    if (ribbonEl) {
-      ribbonEl.hidden = health.data_mode !== "fixture";
-    }
-
-    if (navModeBadge) {
-      navModeBadge.className = `mode-badge mode-${health.data_mode}`;
-    }
-    if (navModeText) {
-      navModeText.textContent = health.data_mode === "fixture" ? "FIXTURE MODE" : "HISTORICAL REPLAY";
-    }
+    updateModeChrome(health.data_mode || "fixture");
 
     // 2. Discover available initialization dates from API
     const inits = await getAvailableInits();

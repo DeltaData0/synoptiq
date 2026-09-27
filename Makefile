@@ -34,4 +34,5 @@ test:
 lint:
 	$(PYTHON) -m ruff check src tests scripts
 
-demo: web api
+demo: web
+	SYNOPTIQ_DEMO_MODE=1 $(PYTHON) scripts/serve.py

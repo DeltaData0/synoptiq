@@ -152,11 +152,11 @@ Check a task's box only after producing real, verifiable output for it in this s
 - [x] D1-03 — IMD 2017/18 pilot per §3 S3 (Owner: B) — done when: Both annual files decode; date axis and mask logged. Evidence: `docs/data_audit.md` IMD annual-file pilot and `DATA_MANIFEST.csv` IDs `imd-2017-pilot` / `imd-2018-pilot`.
 - [x] D1-04 — 03–03/day label and +240/+246 Day-10 audit (Owner: A+B+F) — done when: Signed `data_audit.md`; exact/approximate/unavailable policy frozen. Otherwise empirical-model claim blocked. Evidence: signed D1-04 audit fixes the source-grounded 03–03 UTC convention for Day 1–9 and marks Day 10 `unavailable`/gray because the required +240–+243 interval is not evidenced.
 
-### Phase 2: Audited labels and fixture vertical slice — [ ] Phase complete
+### Phase 2: Audited labels and fixture vertical slice — [x] Phase complete
 
-- [ ] D1-05 — Region GeoJSON, 80% coverage, alignment/label unit tests (Owner: B) — done when: Three hand-checked rows and no-data cases pass.
+- [x] D1-05 — Region GeoJSON, 80% coverage, alignment/label unit tests (Owner: B) — done when: Three hand-checked rows and no-data cases pass.
 - [x] D1-06 — Fixture API/map + provenance (Owner: E+F) — done when: `make smoke` launches and renders a fixture replay offline with visible fixture ribbon. Tag `pilot-gate`. Evidence: verifier ran `make web`, `pytest`, `make smoke`, and inspected the locally served UI: visible fixture ribbon, selectable Day 1 map, stale-data-clearing Day 2 state, and gray/null Day 10 with the audited unavailable reason.
-- [ ] D1-07 — First split-aware real `rows.parquet`/threshold summary (Owner: A+B+C) — done when: Counts by year/lead/season and missingness printed; train-only threshold test passes.
+- [x] D1-07 — First split-aware real `rows.parquet`/threshold summary (Owner: A+B+C) — done when: Counts by year/lead/season and missingness printed; train-only threshold test passes.
 
 ### Phase 3: Model, calibration, and real-data integration gate — [ ] Phase complete
 

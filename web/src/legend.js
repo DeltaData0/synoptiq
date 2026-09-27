@@ -1,58 +1,151 @@
 /**
  * Risk tier legend and palette definition for Synoptiq.
- * Renders server-reported risk tiers without deriving cutoffs on the client.
+ * Supports multiple visual layer modes: Bust Risk, Forecast Rainfall, and 2° Land Grid Coverage.
  */
 
 export const PALETTE = {
   low: {
     fill: "#0d9488",
     stroke: "#2dd4bf",
-    label: "Low",
-    description: "Server-reported low risk tier.",
+    label: "Low Risk",
+    description: "Server-reported low bust risk tier (P < 0.30).",
   },
   watch: {
     fill: "#d97706",
     stroke: "#fbbf24",
     label: "Watch",
-    description: "Server-reported watch risk tier.",
+    description: "Server-reported watch risk tier (0.30 ≤ P < 0.50).",
   },
   high: {
     fill: "#dc2626",
     stroke: "#f87171",
-    label: "High",
-    description: "Server-reported high risk tier.",
+    label: "High Risk",
+    description: "Server-reported high bust risk tier (P ≥ 0.50).",
   },
   no_data: {
     fill: "#475569",
     stroke: "#94a3b8",
-    label: "No data",
+    label: "No Data / Unaudited",
     description: "Server-reported unavailable or no-data tier. Never implies 0% risk.",
   },
 };
 
-/**
- * Returns the fill color for a given tier.
- * @param {string} tier
- * @returns {string}
- */
+export const FORECAST_PALETTE = {
+  heavy: {
+    fill: "#ec4899",
+    stroke: "#f472b6",
+    label: "Heavy (> 30 mm)",
+    description: "Predicted heavy monsoon precipitation.",
+  },
+  moderate: {
+    fill: "#3b82f6",
+    stroke: "#60a5fa",
+    label: "Moderate (15–30 mm)",
+    description: "Predicted moderate regional precipitation.",
+  },
+  light: {
+    fill: "#06b6d4",
+    stroke: "#22d3ee",
+    label: "Light (< 15 mm)",
+    description: "Predicted light or isolated rainfall.",
+  },
+  no_data: {
+    fill: "#475569",
+    stroke: "#94a3b8",
+    label: "No Data",
+    description: "Forecast precipitation unavailable.",
+  },
+};
+
+export const COVERAGE_PALETTE = {
+  full: {
+    fill: "#0d9488",
+    stroke: "#2dd4bf",
+    label: "100% Core Land",
+    description: "Complete 64/64 valid IMD 0.25° grid points (44 regions).",
+  },
+  supported: {
+    fill: "#0284c7",
+    stroke: "#38bdf8",
+    label: "≥ 80% Supported",
+    description: "52–63 valid points; meets training coverage threshold (21 regions).",
+  },
+  coastal: {
+    fill: "#475569",
+    stroke: "#64748b",
+    label: "< 80% Peripheral",
+    description: "Coastal/border fringe (< 52 points); explicit no-data (47 regions).",
+  },
+};
+
 export function getTierColor(tier) {
   return PALETTE[tier]?.fill ?? PALETTE.no_data.fill;
 }
 
-/**
- * Returns the border stroke color for a given tier.
- * @param {string} tier
- * @returns {string}
- */
 export function getTierStroke(tier) {
   return PALETTE[tier]?.stroke ?? PALETTE.no_data.stroke;
 }
 
 /**
- * Renders the interactive legend into the container.
+ * Renders the interactive legend into the container for the active view mode.
  * @param {HTMLElement} container
+ * @param {string} mode - 'bust' | 'forecast' | 'coverage'
  */
-export function renderLegend(container) {
+export function renderLegend(container, mode = "bust") {
+  if (mode === "coverage") {
+    const items = [
+      { key: "full", ...COVERAGE_PALETTE.full },
+      { key: "supported", ...COVERAGE_PALETTE.supported },
+      { key: "coastal", ...COVERAGE_PALETTE.coastal },
+    ];
+    container.innerHTML = `
+      <div class="legend-header">
+        <span class="legend-title">2° LAND GRID COVERAGE</span>
+        <span class="legend-sub">112 REGIONS</span>
+      </div>
+      <div class="legend-items">
+        ${items
+          .map(
+            (t) => `
+          <div class="legend-row" title="${t.description}">
+            <span class="legend-swatch" style="background-color: ${t.fill}; border-color: ${t.stroke};"></span>
+            <div class="legend-meta">
+              <span class="legend-label">${t.label}</span>
+            </div>
+          </div>
+        `
+          )
+          .join("")}
+      </div>
+      <div class="legend-caption">
+        Audited IMD land support partition (65 supported + 47 peripheral).
+      </div>
+    `;
+    return;
+  }
+
+  if (mode === "forecast") {
+    container.innerHTML = `
+      <div class="legend-header">
+        <span class="legend-title">FORECAST RAINFALL</span>
+        <span class="legend-sub">FIXTURE MODE</span>
+      </div>
+      <div class="legend-items">
+        <div class="legend-row" title="Forecast totals are not provided in fixture mode.">
+          <span class="legend-swatch" style="background-color: #475569; border-color: #94a3b8;"></span>
+          <div class="legend-meta">
+            <span class="legend-label">Unavailable in Fixture</span>
+          </div>
+        </div>
+      </div>
+      <div class="legend-caption">
+        Forecast total unavailable in fixture; requires real forecast-total field from pipeline.
+      </div>
+    `;
+    return;
+  }
+
+  // Default 'bust' mode
   const tiers = [
     { key: "high", ...PALETTE.high },
     { key: "watch", ...PALETTE.watch },
@@ -62,7 +155,8 @@ export function renderLegend(container) {
 
   container.innerHTML = `
     <div class="legend-header">
-      <span class="legend-title">RISK TIERS</span>
+      <span class="legend-title">BUST RISK TIERS</span>
+      <span class="legend-sub">P(BUST)</span>
     </div>
     <div class="legend-items">
       ${tiers
@@ -74,7 +168,7 @@ export function renderLegend(container) {
             <span class="legend-label">${t.label}</span>
           </div>
         </div>
-      `,
+      `
         )
         .join("")}
     </div>

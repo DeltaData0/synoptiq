@@ -1,9 +1,43 @@
-"""Guarded placeholder for aligned-row construction."""
+"""Build the split-aware empirical rows.parquet dataset with train-only thresholds."""
 
-from _run_context import emit
+from __future__ import annotations
 
-emit("dataset", "data/processed/rows.parquet", split="2010-2015/2016-2017/2018-2019")
-raise SystemExit(
-    "Dataset build blocked: complete and sign docs/data_audit.md before producing labels or rows."
-)
+import sys
+from pathlib import Path
+
+from _run_context import ROOT, emit
+from bust.data.dataset import build_dataset, check_corpus_coverage, get_manifest_fingerprint
+
+
+def main() -> None:
+    manifest_id = get_manifest_fingerprint(ROOT / "DATA_MANIFEST.csv")
+    output_path = "data/processed/rows.parquet"
+    split = "2010-2015/2016-2017/2018-2019"
+
+    emit("dataset", output_path, manifest_id=manifest_id, split=split)
+
+    # Preflight: audit whether full 2010–2019 real corpus exists
+    report = check_corpus_coverage(ROOT / "data/raw")
+
+    if not report.is_complete:
+        print(f"⚠️ Blocked — D1-07: {report.blocking_reason}")
+        print(f"Next safe action: {report.next_safe_action}")
+        print("Never construct rows.parquet from fixtures, pilots, incomplete years, invented dates, or substituted sources.")
+        sys.exit(1)
+
+    # Real build pipeline (executes only when full 2010-2019 corpus is complete):
+    built_path = build_dataset(
+        raw_dir=ROOT / "data/raw",
+        output_path=ROOT / output_path,
+        manifest_path=ROOT / "DATA_MANIFEST.csv",
+        splits_path=ROOT / "config/splits.yaml",
+        regions_path=ROOT / "config/regions_2deg.geojson",
+        summary_path=ROOT / "artifacts/metrics/dataset_summary.json",
+        floor_mm=10.0,
+    )
+    print(f"Dataset build complete: {built_path}")
+
+
+if __name__ == "__main__":
+    main()
 

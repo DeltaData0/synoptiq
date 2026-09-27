@@ -14,6 +14,11 @@ def _project_root() -> Path:
 
 @lru_cache(maxsize=1)
 def load_store() -> dict:
+    if os.getenv("SYNOPTIQ_DEMO_MODE") == "1":
+        from bust.api.demo_fixture import build_demo_store
+
+        return build_demo_store()
+
     path = Path(os.getenv("REPLAY_ASSET_PATH", _project_root() / "data/fixtures/replay_contract.json"))
     if not path.exists():
         raise FileNotFoundError(f"Replay asset not found: {path}")
@@ -34,4 +39,3 @@ def region(init: str, lead: int, region_id: str) -> dict | None:
 
 def evaluation() -> dict:
     return load_store()["evaluation"]
-

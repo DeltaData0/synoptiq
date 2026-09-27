@@ -41,7 +41,10 @@ For environments where GRIB bindings are difficult to build, use `conda env crea
 - Do not commit raw datasets, credentials, or absolute data paths.
 - Use `DATA_DIR` to point at local data storage (defaults to `data/`).
 - The frozen target is regional 24-hour rain error, with train-only thresholds and explicit UTC verification windows.
-- Day 10 is unavailable until its +240/+246-hour accumulation boundary has been audited.
+- Day 10 is unavailable: the audited target requires a +240–+243-hour amount,
+  while the inspected archive supplies +240–+246 hours. See
+  [docs/data_audit.md](docs/data_audit.md); do not present a Day-10 value as
+  exact without a new approved audit.
 - See [DECISIONS.md](DECISIONS.md), [DATA_MANIFEST.csv](DATA_MANIFEST.csv), and [RUN_LOG.md](RUN_LOG.md) for change control.
 
 ## Project layout
@@ -52,4 +55,3 @@ For environments where GRIB bindings are difficult to build, use `conda env crea
 
 - [NOAA GEFSv12 reforecast archive](https://registry.opendata.aws/noaa-gefs-reforecast/)
 - [IMD 0.25° daily rainfall catalogue](https://imdpune.gov.in/cmpg/Griddata/Rainfall_25_NetCDF.html)
-

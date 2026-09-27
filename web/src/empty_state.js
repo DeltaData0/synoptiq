@@ -42,14 +42,28 @@ export function renderMapEmptyState(container, { lead, title, message, onReset }
 }
 
 /**
+ * Renders a short, non-blocking loading state while a replay request is in flight.
+ * The map is deliberately covered so an earlier date/lead cannot be mistaken for
+ * the newly selected replay.
+ */
+export function renderMapLoadingState(container, { lead }) {
+  container.innerHTML = `
+    <div class="map-loading-overlay" role="status" aria-live="polite">
+      <span class="loading-orbit" aria-hidden="true"></span>
+      <div>
+        <strong>Loading Lead Day ${escapeHtml(lead)}</strong>
+        <span>Retrieving the frozen replay artifact…</span>
+      </div>
+    </div>
+  `;
+}
+
+/**
  * Clears the map empty state overlay.
  * @param {HTMLElement} container
  */
 export function clearMapEmptyState(container) {
-  const overlay = container.querySelector(".map-empty-overlay");
-  if (overlay) {
-    overlay.remove();
-  }
+  container.querySelectorAll(".map-empty-overlay, .map-loading-overlay").forEach((overlay) => overlay.remove());
 }
 
 /**
@@ -68,10 +82,10 @@ export function renderInspectorPrompt(container) {
       </div>
       <h3>Regional Inspector</h3>
       <p class="prompt-text">
-        Select any 2&deg; grid cell on the map to inspect issue-time forecast telemetry, regional threshold, and diagnostic evidence.
+        Select a 2&deg; region to inspect its risk score, verified UTC window, source provenance, and any supplied score evidence.
       </p>
       <div class="prompt-hint">
-        <span>&bull; R20N-078E (Fixture Central-West) has illustrative fixture reasons.</span>
+        <span>Start with a colored region, then follow its evidence and provenance.</span>
       </div>
     </div>
 

@@ -5,6 +5,29 @@
 
 import { escapeHtml } from "./format.js";
 
+const METRIC_LABELS = {
+  brier_score: "Brier score",
+  brier_skill_score: "Brier skill score",
+  auc_roc: "ROC AUC",
+  expected_calibration_error: "Calibration error",
+  sample_count: "Test samples",
+};
+
+function renderMetrics(metrics) {
+  if (!metrics || Object.keys(metrics).length === 0) {
+    return `<span class="trust-metrics-none font-mono">Metrics pending validated held-out evaluation</span>`;
+  }
+
+  return `<div class="metric-grid">${Object.entries(metrics)
+    .slice(0, 4)
+    .map(([key, value]) => {
+      const label = METRIC_LABELS[key] || key.replace(/_/g, " ");
+      const display = typeof value === "number" ? value.toFixed(3) : String(value);
+      return `<span class="metric-card"><small>${escapeHtml(label)}</small><strong class="font-mono">${escapeHtml(display)}</strong></span>`;
+    })
+    .join("")}</div>`;
+}
+
 /**
  * Renders the persistent bottom trust strip.
  * @param {HTMLElement} element
@@ -18,10 +41,7 @@ export function renderTrust(element, evaluation) {
   const metrics = evaluation?.metrics;
   const dataMode = evaluation?.data_mode || "fixture";
 
-  const metricsHtml =
-    metrics && Object.keys(metrics).length > 0
-      ? `<span class="trust-metrics font-mono">${escapeHtml(JSON.stringify(metrics))}</span>`
-      : `<span class="trust-metrics-none font-mono">Metrics: None (Insufficient Test Data)</span>`;
+  const metricsHtml = renderMetrics(metrics);
 
   element.innerHTML = `
     <div class="trust-bar-inner">

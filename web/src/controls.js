@@ -66,7 +66,7 @@ export function setupControls(container, { inits, selectedInit, selectedLead, on
             .join("")}
         </div>
         <p class="lead-hint">
-          Click Day 10 to inspect the audited unavailable state. Days 2–9 test fixture absence.
+          Day 10 remains unavailable unless its exact accumulation interval is evidenced.
         </p>
       </div>
     </div>
@@ -88,7 +88,7 @@ export function setupControls(container, { inits, selectedInit, selectedLead, on
         </div>
         <div>
           <dt>Spatial Unit</dt>
-          <dd id="spec-domain">Fixture geometry; final land grid pending D1-05</dd>
+          <dd id="spec-domain">Fixed 2° India-land grid</dd>
         </div>
         <div>
           <dt>Window Semantics</dt>
@@ -152,7 +152,7 @@ export function setupControls(container, { inits, selectedInit, selectedLead, on
         specDomain.textContent =
           data_mode === "historical_replay"
             ? "Fixed 2° India-Land Grid"
-            : "Fixture geometry; final land grid pending D1-05";
+            : "Fixed 2° grid; integration data only";
       }
       if (specWindow) {
         if (window_text) {
@@ -169,6 +169,12 @@ export function setupControls(container, { inits, selectedInit, selectedLead, on
         } else {
           specWindow.textContent = "Awaiting replay data";
         }
+      }
+    },
+    updateLegend(mode) {
+      const legendContainer = container.querySelector("#dock-legend-container");
+      if (legendContainer) {
+        renderLegend(legendContainer, mode);
       }
     },
   };

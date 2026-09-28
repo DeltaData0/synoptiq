@@ -2,9 +2,13 @@
 
 Synoptiq is a research prototype for identifying the risk that a regional daily-rainfall forecast will be a **forecast bust**. It replays historical GEFSv12 forecast issue times against IMD gridded rainfall; it is not a live warning service and is not validated for NCUM/NEPS operations.
 
+**Start here:** [Synoptiq — Project Reference](docs/SYNOPTIQ.md) brings together the problem, scientific method, architecture, recorded results, current capabilities, development history, and future roadmap in one document.
+
 ## Current status
 
-The checked-in demo runs in **fixture mode**. Its response values are illustrative integration fixtures, not trained-model output or performance evidence. Real-data claims remain blocked until the GEFSv12/IMD retrieval, accumulation-window, coverage, and time-split gates recorded in [docs/data_audit.md](docs/data_audit.md) are completed.
+The recorded real-data MVP uses a **reduced c00-only LightGBM candidate**, with a completed 2010–2019 forecast corpus, held-out evaluation, and a three-date historical replay. Exact Days 1–9 are supported; Day 10 and low-coverage regions remain no-data. Full ensemble/atmospheric features and final release acceptance remain outstanding; see the [project reference](docs/SYNOPTIQ.md#3-current-implementation) for scope and evidence.
+
+A fresh clone still runs in **fixture mode** by default. Real generated artifacts are Git-ignored and must be supplied separately; the [real-replay startup instructions](docs/SYNOPTIQ.md#12-repository-and-local-operation) explain how to select them. Fixture values are not model results.
 
 ## Quick start
 

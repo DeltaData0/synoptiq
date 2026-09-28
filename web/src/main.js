@@ -121,12 +121,13 @@ async function loadRegionDetails(regionId, fallbackProperties) {
 /**
  * Loads replay GeoJSON for the current init date and lead day.
  */
-async function loadReplay(newInit, newLead) {
+async function loadReplay(newInit, newLead, selectedRegionId = undefined) {
   // Invalidate an inspector request made for a previous date/lead before the
   // map changes, so late responses cannot overwrite the new selection.
   state.regionRequestId += 1;
   state.init = newInit ?? state.init;
   state.lead = Number(newLead ?? state.lead);
+  if (selectedRegionId !== undefined) state.selectedRegionId = selectedRegionId;
 
   // Update navigation telemetry
   if (navInitTime) navInitTime.textContent = `${state.init} 00:00Z`;
@@ -134,6 +135,7 @@ async function loadReplay(newInit, newLead) {
 
   // Update controls state
   controlsHandle?.updateSelectedLead(state.lead);
+  controlsHandle?.updateSelectedInit(state.init);
   renderMapLoadingState(mapOverlayEl, { lead: state.lead });
 
   try {
@@ -144,6 +146,17 @@ async function loadReplay(newInit, newLead) {
 
     // Render features on map
     map.render(replay, state.lead, state.selectedRegionId);
+
+    // Compute tier counts for legend
+    const features = replay.features || [];
+    const isDay10Lead = Number(state.lead) === 10;
+    const tierCounts = isDay10Lead ? null : {
+      high: features.filter((f) => f.properties?.tier === "high").length,
+      watch: features.filter((f) => f.properties?.tier === "watch").length,
+      low: features.filter((f) => f.properties?.tier === "low").length,
+      no_data: features.filter((f) => !f.properties?.tier || f.properties.tier === "no_data").length,
+    };
+    controlsHandle?.updateLegend("bust", replay.data_mode, tierCounts);
 
     // Determine window semantics to display in top bar
     const firstProps = replay.features?.[0]?.properties;
@@ -256,6 +269,7 @@ async function boot() {
       onLeadChange: (lead) => loadReplay(state.init, lead),
       onOpenCorpusInfo: () => modals.openCorpusDates(),
       onOpenFeatureArch: () => modals.openFeatureArchitecture(),
+      onOpenFeaturedCase: ({ init, lead, regionId }) => loadReplay(init, lead, regionId),
     });
 
     // 4. Initial Inspector Prompt

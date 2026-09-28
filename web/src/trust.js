@@ -81,7 +81,6 @@ export function renderTrust(element, evaluation, { onOpenReliability } = {}) {
             <span class="btn-icon">📈</span> Reliability Diagram &rarr;
           </button>
         </div>
-        <p class="trust-message">${escapeHtml(message)}</p>
       </div>
 
       <div class="trust-col trust-disclaimer">

@@ -178,15 +178,23 @@ html, body {
 
 .brand-logo {
   position: relative;
-  width: 36px;
-  height: 36px;
-  background: var(--bg-surface-elevated);
-  border: 1px solid var(--border-medium);
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  border: none;
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--accent-cyan);
+  overflow: hidden;
+}
+
+.brand-logo-img {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  display: block;
 }
 
 .brand-pulse {
@@ -2693,15 +2701,6 @@ dialog.app-modal::backdrop {
   white-space: nowrap;
 }
 
-.roadmap-warning {
-  margin: 0;
-  border-left: 2px solid #f59e0b;
-  padding: 0.32rem 0.45rem;
-  color: #fcd34d;
-  font-size: 0.66rem;
-  line-height: 1.35;
-}
-
 .analog-footnote {
   font-size: 0.72rem;
   color: var(--text-muted);
@@ -2912,6 +2911,207 @@ dialog.app-modal::backdrop {
   line-height: 1.35;
 }
 
+
 .rel-prov-list strong {
   color: #e2e8f0;
 }
+
+/* ==========================================================================
+   Demo UI Improvements — Case Summary "Why Flagged?" Block
+   ========================================================================== */
+.case-summary {
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.08) 0%, rgba(30, 41, 59, 0.6) 100%);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  border-left: 3px solid #f87171;
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.85rem;
+  animation: fadeIn 250ms ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.case-summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.case-summary-kicker {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #f87171;
+  text-transform: uppercase;
+}
+
+.case-summary-tier {
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.case-summary-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.cs-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.cs-lbl {
+  font-size: 0.73rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.cs-val {
+  font-size: 0.78rem;
+  color: #e2e8f0;
+  text-align: right;
+  word-break: break-all;
+}
+
+/* ==========================================================================
+   Legend Tier Counts
+   ========================================================================== */
+.legend-count {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #94a3b8;
+  background: rgba(148, 163, 184, 0.1);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 3px;
+  padding: 0.05rem 0.3rem;
+  margin-left: auto;
+}
+
+.legend-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+}
+
+/* ==========================================================================
+   Featured Case Chip (control dock)
+   ========================================================================== */
+.btn-featured-case {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  width: 100%;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.08) 0%, rgba(30, 41, 59, 0.5) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: var(--radius-md);
+  padding: 0.6rem 0.75rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+  margin-top: 0.5rem;
+}
+
+.btn-featured-case:hover {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.15) 0%, rgba(30, 41, 59, 0.7) 100%);
+  border-color: rgba(56, 189, 248, 0.6);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.15);
+}
+
+.featured-case-kicker {
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--accent-cyan);
+  text-transform: uppercase;
+}
+
+.featured-case-value {
+  font-size: 0.75rem;
+  color: #e2e8f0;
+}
+
+/* ==========================================================================
+   Map Layer Transitions
+   ========================================================================== */
+.leaflet-pane .leaflet-interactive {
+  transition: fill-opacity 200ms ease, opacity 200ms ease;
+}
+
+/* Pulse ring on selected cell */
+@keyframes regionPulse {
+  0%   { stroke-width: 3; stroke-opacity: 1; }
+  50%  { stroke-width: 5; stroke-opacity: 0.5; }
+  100% { stroke-width: 3; stroke-opacity: 1; }
+}
+
+.map-selected-cell {
+  animation: regionPulse 2s ease-in-out infinite;
+}
+
+/* Inspector content fade-in */
+.inspector-content {
+  animation: fadeIn 220ms ease;
+}
+
+/* ==========================================================================
+   Day-10 Quiet Pill (header compact notice)
+   ========================================================================== */
+.day10-map-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(71, 85, 105, 0.25);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 20px;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.72rem;
+  color: #94a3b8;
+  font-family: var(--font-mono);
+}
+
+/* ==========================================================================
+   Roadmap details collapsed by default — visual cue
+   ========================================================================== */
+details.group-roadmap > summary {
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+details.group-roadmap > summary::-webkit-details-marker {
+  display: none;
+}
+
+details.group-roadmap > summary::after {
+  content: "▸";
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  transition: transform 200ms ease;
+}
+
+details.group-roadmap[open] > summary::after {
+  transform: rotate(90deg);
+}
+
+.roadmap-details-body {
+  padding-top: 0.6rem;
+  animation: fadeIn 180ms ease;
+}
+
+/* Inspector section transitions */
+.inspector-section {
+  transition: opacity 200ms ease;
+}
+

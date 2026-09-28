@@ -63,12 +63,24 @@ function formatProvenance(value) {
   return "Not supplied";
 }
 
-function formatScoreContribution(reason) {
+function scoreContributionValue(reason) {
   // Replay assets record the saved LightGBM contribution in the evidence
   // caption. Feature `value` is deliberately the input value (when numeric),
   // not the contribution itself.
   const match = String(reason?.caption || "").match(/score contribution\s+([+-]?\d+(?:\.\d+)?)/i);
-  return match ? Number(match[1]).toFixed(4) : "Not supplied";
+  return match ? Number(match[1]) : null;
+}
+
+function formatScoreContribution(reason) {
+  const value = scoreContributionValue(reason);
+  return value === null ? "Not supplied" : value.toFixed(4);
+}
+
+function getTopScoreReason(reasons) {
+  return reasons
+    .map((reason) => ({ reason, value: scoreContributionValue(reason) }))
+    .filter(({ value }) => value !== null)
+    .sort((a, b) => Math.abs(b.value) - Math.abs(a.value))[0] || null;
 }
 
 function renderLeadTrajectory(leadCurve, activeLead) {
@@ -163,6 +175,18 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, lead
 
   const isFixtureEvidence =
     dataMode === "fixture" || reasons.some((r) => r.evidence_layer === "fixture");
+  const topReason = getTopScoreReason(reasons);
+  const apiPreview = {
+    data_mode: dataMode,
+    region_id: regionId,
+    init_utc: regionData?.init_utc || fallbackProperties?.init_utc || null,
+    lead_day: Number(lead),
+    p_bust: pBust,
+    tier,
+    window_quality: windowQuality,
+    valid_start_utc: validStartUtc,
+    valid_end_utc: validEndUtc,
+  };
 
   // Build Reasons Grouped HTML
   const groupedReasonsHtml = REASON_GROUPS.map((grp) => {
@@ -170,27 +194,28 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, lead
     if (matching.length === 0) {
       if (grp.status === "roadmap") {
         return `
-          <div class="reason-group group-roadmap">
-            <div class="group-header">
+          <details class="reason-group group-roadmap" open>
+            <summary class="group-header">
               <span class="group-icon">${grp.icon}</span>
               <span class="group-name">${escapeHtml(grp.label)}</span>
-              <span class="badge-roadmap-tag">ILLUSTRATIVE UI WRAPPER</span>
-            </div>
-            <p class="group-roadmap-note">${escapeHtml(grp.deferredMsg)}</p>
+              <span class="badge-roadmap-tag">ILLUSTRATIVE</span>
+            </summary>
+            <div class="roadmap-details-body">
+              <p class="group-roadmap-note">${escapeHtml(grp.deferredMsg)}</p>
 
-            <div class="roadmap-preview">
-              ${grp.previewRows
-                .map(
-                  ([label, value]) => `
+              <div class="roadmap-preview">
+                ${grp.previewRows
+                  .map(
+                    ([label, value]) => `
                     <div class="roadmap-preview-row">
                       <span>${escapeHtml(label)} <em>(example)</em></span>
                       <strong>${escapeHtml(value)}</strong>
                     </div>`
-                )
-                .join("")}
+                  )
+                  .join("")}
+              </div>
             </div>
-            <p class="roadmap-warning">Illustrative UI only — values are not retrieved, model inputs, scores, or contributors to this bust probability.</p>
-          </div>
+          </details>
         `;
       }
 
@@ -309,6 +334,32 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, lead
         ? `Regional diagnostics could not be loaded: ${escapeHtml(detailError.message)}. Showing only map fields supplied for this selection.`
         : "Full regional diagnostics are not supplied for this replay selection. Showing the replay fields that are available."
       }
+          </div>
+        </div>
+      `
+      : ""
+    }
+
+      ${!isDay10 && pBust !== null
+      ? `
+        <div class="case-summary" aria-label="Selected regional case summary">
+          <div class="case-summary-header">
+            <span class="case-summary-kicker">WHY FLAGGED?</span>
+            <span class="case-summary-tier tier-pill tier-${tier}">${escapeHtml(tierMeta.label)}: ${escapeHtml(formatProbability(pBust))}</span>
+          </div>
+          <div class="case-summary-grid">
+            <div class="cs-row">
+              <span class="cs-lbl">Forecast rain</span>
+              <span class="cs-val font-mono">${escapeHtml(formatMm(forecastMm))}</span>
+            </div>
+            ${topReason ? `<div class="cs-row">
+              <span class="cs-lbl">Largest score signal</span>
+              <span class="cs-val font-mono">${escapeHtml(topReason.reason.feature)} ${escapeHtml(formatScoreContribution(topReason.reason))}</span>
+            </div>` : ""}
+            ${validStartUtc && validEndUtc ? `<div class="cs-row">
+              <span class="cs-lbl">Verification window</span>
+              <span class="cs-val font-mono">${escapeHtml(formatWindowInterval(validStartUtc, validEndUtc))}</span>
+            </div>` : ""}
           </div>
         </div>
       `

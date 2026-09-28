@@ -366,8 +366,9 @@ export function createMap(containerElement, onSelectRegion, onModeChange) {
         fillColor: fill,
         fillOpacity: isSelected ? 0.95 : 0.62,
         color: isSelected ? "#38bdf8" : stroke,
-        weight: isSelected ? 3 : 1,
+        weight: isSelected ? 3.5 : 1,
         opacity: 0.85,
+        className: isSelected ? "map-selected-cell" : "",
       };
     }
 
@@ -397,6 +398,7 @@ export function createMap(containerElement, onSelectRegion, onModeChange) {
         color: isSelected ? "#38bdf8" : stroke,
         weight: isSelected ? 3.5 : 1.5,
         opacity: 0.85,
+        className: isSelected ? "map-selected-cell" : "",
       };
     }
 
@@ -412,6 +414,7 @@ export function createMap(containerElement, onSelectRegion, onModeChange) {
         color: isSelected ? "#38bdf8" : "#475569",
         weight: isSelected ? 3 : 1,
         opacity: 0.7,
+        className: isSelected ? "map-selected-cell" : "",
       };
     }
 
@@ -423,6 +426,7 @@ export function createMap(containerElement, onSelectRegion, onModeChange) {
         weight: isSelected ? 3 : 1.25,
         dashArray: "3, 4",
         opacity: 0.75,
+        className: isSelected ? "map-selected-cell" : "",
       };
     }
 
@@ -435,8 +439,9 @@ export function createMap(containerElement, onSelectRegion, onModeChange) {
         fillColor,
         fillOpacity: 0.92,
         color: "#38bdf8",
-        weight: 3.5,
+        weight: 4,
         opacity: 1,
+        className: "map-selected-cell",
       };
     }
 
@@ -446,6 +451,7 @@ export function createMap(containerElement, onSelectRegion, onModeChange) {
       color: strokeColor,
       weight: 1.5,
       opacity: 0.85,
+      className: "",
     };
   }
 
@@ -482,7 +488,15 @@ export function createMap(containerElement, onSelectRegion, onModeChange) {
         const peripheral = features.filter(
           (feature) => feature.properties?.is_land_supported === false || (feature.properties?.coverage_fraction ?? 1) < 0.80
         ).length;
-        hudSummary.textContent = `${scored} scored land regions (≥80% IMD) · ${peripheral} peripheral no-data`;
+        const high = features.filter((feature) => feature.properties?.tier === "high").length;
+        const watch = features.filter((feature) => feature.properties?.tier === "watch").length;
+        const low = features.filter((feature) => feature.properties?.tier === "low").length;
+        const riskCounts = [
+          high ? `${high} high` : null,
+          watch ? `${watch} watch` : null,
+          low ? `${low} low` : null,
+        ].filter(Boolean);
+        hudSummary.textContent = `${riskCounts.join(" · ") || `${scored} scored`} · ${peripheral} no-data`;
       }
     }
     if (hudWindow) {

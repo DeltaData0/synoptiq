@@ -17,6 +17,7 @@ class FeatureProperties(BaseModel):
     p_bust: float | None = Field(default=None, ge=0, le=1)
     tier: Literal["low", "watch", "high", "no_data"]
     threshold_mm: float | None = Field(default=None, ge=0)
+    f_control_mm: float | None = Field(default=None, ge=0)
     window_quality: Literal["exact", "approximate", "unavailable"]
     provenance: str
     no_data_reason: str | None = None
@@ -58,6 +59,13 @@ class RegionResponse(BaseModel):
     window_quality: Literal["exact", "approximate", "unavailable"]
     data_mode: Literal["fixture", "historical_replay"]
     provenance: str
+    valid_start_utc: str | None = None
+    valid_end_utc: str | None = None
+    coverage_fraction: float | None = Field(default=None, ge=0, le=1)
+    source_key: str | None = None
+    grib_steps: str | None = None
+    no_data_reason: str | None = None
+    tier: Literal["low", "watch", "high", "no_data"] | None = None
     reasons: list[Reason]
     analogs: list[dict[str, Any]]
     caveats: list[str]
@@ -68,4 +76,3 @@ class EvaluationResponse(BaseModel):
     status: str
     message: str
     metrics: dict[str, Any] | None
-

@@ -204,3 +204,176 @@ def evaluate_held_out_probabilities(
         reliability=reliability,
         message=f"Metrics computed on {len(eligible)} eligible exact Day 1-9 {split} rows.",
     )
+
+
+@dataclass(frozen=True)
+class CandidateFrozenRunMetadata:
+    """Immutable candidate run context frozen before any test data access."""
+
+    manifest_id: str
+    git_commit: str
+    is_dirty: bool
+    split_id: str
+    seed: int
+    feature_columns: tuple[str, ...]
+    feature_set_sha256: str
+    model_file_sha256: str
+    lightgbm_version: str
+    categorical_encoding: dict[str, Any]
+    hyperparameters: dict[str, Any]
+    frozen_before_test_access: bool = True
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": "1.0",
+            "model_type": "reduced_c00_only_candidate",
+            "model_name": "reduced_c00_only_candidate",
+            "manifest_id": self.manifest_id,
+            "git_commit": self.git_commit,
+            "is_dirty": self.is_dirty,
+            "split_id": self.split_id,
+            "seed": self.seed,
+            "feature_columns": list(self.feature_columns),
+            "feature_set_sha256": self.feature_set_sha256,
+            "model_file_sha256": self.model_file_sha256,
+            "lightgbm_version": self.lightgbm_version,
+            "categorical_encoding": self.categorical_encoding,
+            "hyperparameters": self.hyperparameters,
+            "frozen_before_test_access": self.frozen_before_test_access,
+        }
+
+
+def build_candidate_frozen_run_metadata(
+    *,
+    manifest_id: str,
+    git_commit: str,
+    is_dirty: bool,
+    seed: int,
+    feature_columns: tuple[str, ...] | list[str],
+    model_file_sha256: str,
+    lightgbm_version: str,
+    categorical_encoding: Mapping[str, Any],
+    hyperparameters: Mapping[str, Any],
+    split_id: str = FROZEN_SPLIT_ID,
+    frozen_before_test_access: bool = True,
+) -> CandidateFrozenRunMetadata:
+    """Validate and build candidate frozen-run context before reading test data."""
+    if not manifest_id.strip() or not git_commit.strip():
+        raise ValueError("Run metadata requires non-empty manifest_id and git_commit.")
+    if split_id != FROZEN_SPLIT_ID:
+        raise ValueError(f"Frozen split must remain {FROZEN_SPLIT_ID}.")
+    if not model_file_sha256.strip() or len(model_file_sha256) != 64:
+        raise ValueError("Candidate model_file_sha256 must be a 64-character SHA-256 hex string.")
+    if not frozen_before_test_access:
+        raise ValueError("frozen_before_test_access must be True.")
+
+    columns = tuple(feature_columns)
+    if not columns or len(set(columns)) != len(columns):
+        raise ValueError("Feature columns must be non-empty and unique in their frozen order.")
+    forbidden = sorted(set(columns) & FORBIDDEN_FEATURE_COLUMNS)
+    if forbidden:
+        raise ValueError(f"Feature set contains forbidden observation/label columns: {forbidden}")
+
+    try:
+        canonical_hyperparameters = json.loads(json.dumps(dict(hyperparameters), sort_keys=True))
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Hyperparameters must be JSON-serializable.") from exc
+
+    try:
+        canonical_encoding = json.loads(json.dumps(dict(categorical_encoding), sort_keys=True))
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Categorical encoding must be JSON-serializable.") from exc
+
+    feature_hash = sha256(
+        json.dumps(list(columns), separators=(",", ":"), ensure_ascii=True).encode("utf-8")
+    ).hexdigest()
+
+    return CandidateFrozenRunMetadata(
+        manifest_id=manifest_id,
+        git_commit=git_commit,
+        is_dirty=is_dirty,
+        split_id=split_id,
+        seed=seed,
+        feature_columns=columns,
+        feature_set_sha256=feature_hash,
+        model_file_sha256=model_file_sha256,
+        lightgbm_version=lightgbm_version,
+        categorical_encoding=canonical_encoding,
+        hyperparameters=canonical_hyperparameters,
+        frozen_before_test_access=frozen_before_test_access,
+    )
+
+
+def build_candidate_evaluation_artifact(
+    run: CandidateFrozenRunMetadata,
+    *,
+    candidate_evaluation: ProbabilityEvaluation,
+    climatology_evaluation: ProbabilityEvaluation,
+    uncalibrated_evaluation: ProbabilityEvaluation | None,
+    calibration_status: str,
+    calibration_sample_count: int,
+    calibration_parameters: dict[str, Any] | None,
+    sample_counts: Mapping[str, Any],
+    deferred_feature_groups: tuple[str, ...] | list[str],
+) -> dict[str, Any]:
+    """Build honest, held-out evaluation artifact comparing candidate to climatology on same cohort."""
+    if calibration_sample_count < 0:
+        raise ValueError("Calibration sample count cannot be negative.")
+    if candidate_evaluation.status == "eligible_test_metrics" and calibration_status != "ready":
+        raise ValueError("Held-out calibrated metrics require a ready validation-only calibrator.")
+    if candidate_evaluation.sample_count != climatology_evaluation.sample_count:
+        raise ValueError(
+            f"Candidate ({candidate_evaluation.sample_count}) and climatology "
+            f"({climatology_evaluation.sample_count}) must evaluate on identical sample counts."
+        )
+
+    brier_delta: float | None = None
+    if (
+        candidate_evaluation.metrics is not None
+        and climatology_evaluation.metrics is not None
+    ):
+        brier_delta = (
+            candidate_evaluation.metrics["brier_score"]
+            - climatology_evaluation.metrics["brier_score"]
+        )
+
+    candidate_metrics: dict[str, float] | None = None
+    if candidate_evaluation.metrics is not None:
+        candidate_metrics = dict(candidate_evaluation.metrics)
+        if uncalibrated_evaluation and uncalibrated_evaluation.metrics:
+            candidate_metrics["uncalibrated_brier_score"] = (
+                uncalibrated_evaluation.metrics["brier_score"]
+            )
+
+    return {
+        "schema_version": "1.0",
+        "model_type": "reduced_c00_only_candidate",
+        "model_name": "reduced_c00_only_candidate",
+        "data_mode": "held_out_test",
+        "status": candidate_evaluation.status,
+        "message": candidate_evaluation.message,
+        "sample_counts": dict(sample_counts),
+        "cohort_definition": {
+            "split": "test",
+            "lead_days": "1-9",
+            "window_quality": "exact",
+            "label_required": "bust.notna()",
+            "required_features": list(run.feature_columns),
+            "same_cohort_evaluated": True,
+        },
+        "test_evaluation": {
+            "sample_count": candidate_evaluation.sample_count,
+            "candidate_metrics": candidate_metrics,
+            "climatology_metrics": climatology_evaluation.metrics,
+            "brier_score_delta": brier_delta,
+            "reliability": candidate_evaluation.reliability,
+        },
+        "calibration": {
+            "status": calibration_status,
+            "sample_count": calibration_sample_count,
+            "method": "sigmoid_platt",
+            "parameters": calibration_parameters,
+        },
+        "deferred_feature_groups": list(deferred_feature_groups),
+        "run": run.to_dict(),
+    }

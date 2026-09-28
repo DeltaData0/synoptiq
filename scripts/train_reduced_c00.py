@@ -1,4 +1,4 @@
-"""Guarded entry point for climatology-baseline training and evaluation."""
+"""Guarded entry point for reduced c00-only candidate training and validation comparison."""
 
 from __future__ import annotations
 
@@ -7,15 +7,15 @@ import sys
 from pathlib import Path
 
 from bust.data.dataset import get_manifest_fingerprint
-from bust.model.baseline import run_climatology_baseline_pipeline
 from bust.model.evaluate import FROZEN_SPLIT_ID
+from bust.model.train import run_reduced_c00_pipeline
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Run reproducible train-only climatology baseline and held-out evaluation."
+        description="Run reproducible training and validation evaluation for reduced c00 candidate."
     )
     parser.add_argument(
         "--dataset",
@@ -26,14 +26,14 @@ def main() -> None:
     parser.add_argument(
         "--model-output",
         type=Path,
-        default=ROOT / "artifacts" / "model" / "climatology_baseline.json",
-        help="Path for model artifact JSON (default: artifacts/model/climatology_baseline.json)",
+        default=ROOT / "artifacts" / "model" / "reduced_c00_candidate.json",
+        help="Path for model artifact JSON (default: artifacts/model/reduced_c00_candidate.json)",
     )
     parser.add_argument(
         "--metrics-output",
         type=Path,
-        default=ROOT / "artifacts" / "metrics" / "climatology_baseline_evaluation.json",
-        help="Path for evaluation artifact JSON (default: artifacts/metrics/climatology_baseline_evaluation.json)",
+        default=ROOT / "artifacts" / "metrics" / "reduced_c00_validation.json",
+        help="Path for validation artifact JSON (default: artifacts/metrics/reduced_c00_validation.json)",
     )
     parser.add_argument(
         "--manifest",
@@ -58,7 +58,8 @@ def main() -> None:
     # Preflight check: dataset must exist
     if not args.dataset.exists():
         manifest_id = get_manifest_fingerprint(args.manifest)
-        print("command=train")
+        print("command=candidate")
+        print("model_name=reduced_c00_only_candidate")
         print(f"manifest_id={manifest_id}")
         print(f"split={FROZEN_SPLIT_ID}")
         print(f"seed={args.seed}")
@@ -66,11 +67,11 @@ def main() -> None:
         print(f"model_artifact={args.model_output}")
         print(f"metrics_artifact={args.metrics_output}")
         print("status=blocked_missing_dataset")
-        sys.stderr.write(f"Training blocked: processed dataset not found at {args.dataset}\n")
+        sys.stderr.write(f"Candidate training blocked: processed dataset not found at {args.dataset}\n")
         sys.exit(1)
 
     try:
-        summary = run_climatology_baseline_pipeline(
+        summary = run_reduced_c00_pipeline(
             dataset_path=args.dataset,
             model_output_path=args.model_output,
             metrics_output_path=args.metrics_output,
@@ -83,10 +84,11 @@ def main() -> None:
         sys.stderr.write(f"Error: {err}\n")
         sys.exit(1)
     except (ValueError, RuntimeError, OSError, KeyError) as err:
-        sys.stderr.write(f"Training failed: {err}\n")
+        sys.stderr.write(f"Candidate training failed: {err}\n")
         sys.exit(1)
 
-    print("command=train")
+    print("command=candidate")
+    print("model_name=reduced_c00_only_candidate")
     print(f"manifest_id={summary['manifest_id']}")
     print(f"git_commit={summary['git_commit']}")
     print(f"split={FROZEN_SPLIT_ID}")
@@ -94,14 +96,13 @@ def main() -> None:
     print(f"input_path={args.dataset}")
     print(f"model_artifact={args.model_output}")
     print(f"metrics_artifact={args.metrics_output}")
-    print("status=baseline_only")
-    print(f"train_samples={summary['sample_counts']['train_eligible']}")
-    print(f"validation_samples={summary['sample_counts']['validation_eligible']}")
-    print(f"test_samples={summary['sample_counts']['test_eligible']}")
-    if summary["test_evaluation"]["metrics"]:
-        print(f"test_brier_score={summary['test_evaluation']['metrics']['brier_score']:.6f}")
-        print(f"test_bust_prevalence={summary['test_evaluation']['metrics']['bust_prevalence']:.6f}")
-    print(f"spread_only_status={summary['spread_only_status']}")
+    print("status=validation_only")
+    print(f"train_samples={summary['train_samples']}")
+    print(f"validation_samples={summary['validation_samples']}")
+    print(f"candidate_validation_brier_score={summary['candidate_validation_brier_score']:.6f}")
+    print(f"candidate_validation_bust_prevalence={summary['candidate_validation_bust_prevalence']:.6f}")
+    print(f"climatology_validation_brier_score={summary['climatology_validation_brier_score']:.6f}")
+    print(f"deferred_feature_groups={','.join(summary['deferred_feature_groups'])}")
 
 
 if __name__ == "__main__":

@@ -1442,7 +1442,7 @@ html, body {
 }
 
 
-/* Reserved Trajectory Card */
+/* API-supplied lead trajectory */
 .trajectory-card {
   background: var(--bg-surface-elevated);
   border: 1px dashed var(--border-medium);
@@ -1453,9 +1453,109 @@ html, body {
   gap: 0.5rem;
 }
 
-.trajectory-svg {
+.trajectory-scale {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  color: var(--text-muted);
+}
+
+.trajectory-chart {
+  height: 112px;
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  align-items: end;
+  gap: 0.24rem;
+  padding: 0.2rem 0 0;
+  border-bottom: 1px solid var(--border-medium);
+}
+
+.trajectory-point {
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  display: grid;
+  grid-template-rows: 1fr auto auto;
+  align-items: end;
+  gap: 0.18rem;
+  cursor: pointer;
+}
+
+.trajectory-point:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.trajectory-point:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.trajectory-bar-wrap {
   width: 100%;
-  height: 50px;
+  height: 72px;
+  display: flex;
+  align-items: end;
+  border-radius: 2px 2px 0 0;
+  background: rgba(71, 85, 105, 0.18);
+  overflow: hidden;
+}
+
+.trajectory-bar {
+  display: block;
+  width: 100%;
+  min-height: 3px;
+  background: linear-gradient(180deg, #22d3ee, #0284c7);
+  border-radius: 2px 2px 0 0;
+  transition: opacity 0.15s ease, filter 0.15s ease;
+}
+
+.trajectory-point:hover:not(:disabled) .trajectory-bar,
+.trajectory-point-selected .trajectory-bar {
+  filter: brightness(1.35);
+}
+
+.trajectory-point-selected .trajectory-bar-wrap {
+  box-shadow: 0 0 0 1px var(--accent-cyan), 0 0 12px var(--accent-glow);
+}
+
+.trajectory-point-unavailable .trajectory-bar {
+  background: repeating-linear-gradient(135deg, #64748b 0 3px, #334155 3px 6px);
+}
+
+.trajectory-prob,
+.trajectory-day {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+
+.trajectory-prob {
+  font-size: 0.56rem;
+  color: var(--text-secondary);
+}
+
+.trajectory-day {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.trajectory-point-selected .trajectory-day {
+  color: var(--accent-cyan);
+}
+
+.trajectory-caption {
+  margin: 0;
+  font-size: 0.64rem;
+  line-height: 1.35;
+  color: var(--text-muted);
 }
 
 .trajectory-notice {
@@ -1477,6 +1577,41 @@ html, body {
   font-size: 0.68rem;
   color: var(--text-muted);
   line-height: 1.35;
+}
+
+.region-provenance-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem;
+  margin: 0;
+}
+
+.region-provenance-grid > div {
+  min-width: 0;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface-elevated);
+}
+
+.region-provenance-grid dt {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.region-provenance-grid dd {
+  margin: 0.2rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.65rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.region-provenance-grid .region-provenance-wide {
+  grid-column: 1 / -1;
 }
 
 .analog-list {

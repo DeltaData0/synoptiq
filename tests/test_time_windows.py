@@ -68,7 +68,7 @@ def test_d10_returns_unavailable_not_invented_interval() -> None:
 
 def test_utc_naive_timestamps_are_rejected() -> None:
     """Timezone-naive datetimes must raise ValueError across alignment and accumulation functions."""
-    naive_dt = datetime(2018, 8, 1, 0, 0)
+    naive_dt = datetime(2018, 8, 1, 0, 0)  # noqa: DTZ001
     aware_dt = datetime(2018, 8, 1, 0, 0, tzinfo=UTC)
 
     with pytest.raises(ValueError, match="timezone-aware UTC"):

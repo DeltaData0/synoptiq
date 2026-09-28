@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
 from bust.api.main import app
+from bust.api.schemas import RegionResponse
 
 client = TestClient(app)
 
@@ -12,6 +13,38 @@ def test_fixture_replay_contract_and_day_10_no_data() -> None:
     assert payload["data_mode"] == "fixture"
     assert payload["features"][0]["properties"]["p_bust"] is None
     assert payload["features"][0]["properties"]["window_quality"] == "unavailable"
+
+
+def test_region_schema_preserves_optional_drilldown_provenance_fields() -> None:
+    """D2-02 fields remain optional so existing fixture contracts remain valid."""
+    payload = {
+        "region_id": "R20N-078E",
+        "init_utc": "2018-08-01T00:00:00Z",
+        "lead_day": 1,
+        "p_bust": 0.2,
+        "confidence_complement": None,
+        "forecast_mm": 8.5,
+        "observed_mm": None,
+        "threshold_mm": 10.0,
+        "window_quality": "exact",
+        "data_mode": "fixture",
+        "provenance": "fixture-contract-v1",
+        "valid_start_utc": "2018-08-01T03:00:00Z",
+        "valid_end_utc": "2018-08-02T03:00:00Z",
+        "coverage_fraction": 0.85,
+        "source_key": "observed-source-key",
+        "grib_steps": "24-48h",
+        "no_data_reason": None,
+        "tier": "low",
+        "reasons": [],
+        "analogs": [],
+        "caveats": [],
+    }
+    model = RegionResponse.model_validate(payload)
+    assert model.valid_start_utc == payload["valid_start_utc"]
+    assert model.coverage_fraction == 0.85
+    assert model.source_key == "observed-source-key"
+    assert model.grib_steps == "24-48h"
 
 
 def test_invalid_replay_returns_available_dates() -> None:

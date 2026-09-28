@@ -8,6 +8,8 @@ import { formatMm, formatProbability, formatWindowInterval, escapeHtml } from ".
 import { PALETTE } from "./legend.js";
 
 const REASON_GROUPS = [
+  { key: "forecast_control", label: "Control Forecast Rain", icon: "🌧️" },
+  { key: "regional_context", label: "Regional Context", icon: "🗺️" },
   { key: "ensemble_disagreement", label: "Ensemble Disagreement", icon: "📊" },
   { key: "moisture", label: "Atmospheric Moisture", icon: "💧" },
   { key: "circulation", label: "Circulation & Dynamics", icon: "🌀" },
@@ -15,12 +17,84 @@ const REASON_GROUPS = [
   { key: "lead_season", label: "Lead Horizon & Season", icon: "📅" },
 ];
 
+function formatCoverage(value) {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return "Not supplied";
+  return `${Math.round(Number(value) * 100)}%`;
+}
+
+function formatProvenance(value) {
+  if (typeof value === "string" && value.trim()) return value;
+  if (value && typeof value === "object") {
+    return Object.entries(value)
+      .filter(([, item]) => item !== null && item !== undefined && String(item).trim())
+      .map(([key, item]) => `${key}=${item}`)
+      .join("; ");
+  }
+  return "Not supplied";
+}
+
+function renderLeadTrajectory(leadCurve, activeLead) {
+  if (!Array.isArray(leadCurve) || leadCurve.length === 0) {
+    return `
+      <div class="trajectory-notice">
+        <span class="trajectory-notice-title">Lead records not supplied</span>
+        <span class="trajectory-notice-desc">This selection has no separately supplied per-lead regional records. Synoptiq does not infer a curve.</span>
+      </div>
+    `;
+  }
+
+  const supplied = leadCurve.filter((point) => point.status === "available" && point.p_bust !== null);
+  if (supplied.length === 0) {
+    return `
+      <div class="trajectory-notice">
+        <span class="trajectory-notice-title">No score curve available</span>
+        <span class="trajectory-notice-desc">The API returned no scored exact Day 1–9 records for this region and initialization.</span>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="trajectory-scale" aria-hidden="true"><span>100%</span><span>0%</span></div>
+    <div class="trajectory-chart" role="group" aria-label="Supplied forecast bust probabilities by lead day">
+      ${leadCurve
+        .map((point) => {
+          const isAvailable = point.status === "available" && point.p_bust !== null;
+          const isSelected = Number(point.lead) === Number(activeLead);
+          const statusLabel = isAvailable
+            ? `${formatProbability(point.p_bust)} bust probability; threshold ${formatMm(point.threshold_mm)}`
+            : point.status === "unavailable"
+            ? "Unavailable"
+            : point.status === "error"
+            ? "Request failed"
+            : "Not supplied";
+          const barHeight = isAvailable ? Math.max(5, Math.round(point.p_bust * 100)) : 3;
+          return `
+            <button
+              type="button"
+              class="trajectory-point ${isAvailable ? "trajectory-point-available" : "trajectory-point-unavailable"} ${isSelected ? "trajectory-point-selected" : ""}"
+              data-curve-lead="${escapeHtml(point.lead)}"
+              ${isAvailable ? "" : "disabled"}
+              aria-pressed="${isSelected ? "true" : "false"}"
+              title="Lead Day ${escapeHtml(point.lead)}: ${escapeHtml(statusLabel)}"
+            >
+              <span class="trajectory-bar-wrap"><span class="trajectory-bar" style="height:${barHeight}%"></span></span>
+              <span class="trajectory-prob font-mono">${isAvailable ? escapeHtml(formatProbability(point.p_bust)) : "—"}</span>
+              <span class="trajectory-day font-mono">D${escapeHtml(point.lead)}</span>
+            </button>
+          `;
+        })
+        .join("")}
+    </div>
+    <p class="trajectory-caption">Bars are direct regional API responses. Missing, failed, and unavailable leads are never estimated by the dashboard.</p>
+  `;
+}
+
 /**
  * Renders the detailed Region Inspector view.
  * @param {HTMLElement} panel
  * @param {object} options
  */
-export function renderRegion(panel, { regionData, fallbackProperties, lead, onSelectLead }) {
+export function renderRegion(panel, { regionData, fallbackProperties, lead, leadCurve, detailError, onSelectLead }) {
   // Merge full regionData (from /v1/region) with fallbackProperties (from /v1/replay feature)
   const isFallback = !regionData;
   const regionId = regionData?.region_id || fallbackProperties?.region_id || "Unknown";
@@ -32,14 +106,17 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, onSe
   const forecastMm = regionData?.forecast_mm;
   const observedMm = regionData?.observed_mm;
   const windowQuality = regionData?.window_quality || fallbackProperties?.window_quality || "unavailable";
-  const noDataReason = fallbackProperties?.no_data_reason;
+  const noDataReason = regionData?.no_data_reason || fallbackProperties?.no_data_reason;
   const confidence = regionData?.confidence_complement;
   const reasons = regionData?.reasons || [];
   const caveats = regionData?.caveats || [];
-  const provenance = regionData?.provenance || fallbackProperties?.provenance || "fixture-contract-v1";
+  const provenance = formatProvenance(regionData?.provenance || fallbackProperties?.provenance);
   const dataMode = regionData?.data_mode || fallbackProperties?.data_mode || "fixture";
-  const validStartUtc = fallbackProperties?.valid_start_utc;
-  const validEndUtc = fallbackProperties?.valid_end_utc;
+  const validStartUtc = regionData?.valid_start_utc || fallbackProperties?.valid_start_utc;
+  const validEndUtc = regionData?.valid_end_utc || fallbackProperties?.valid_end_utc;
+  const sourceKey = regionData?.source_key || fallbackProperties?.source_key || null;
+  const gribSteps = regionData?.grib_steps || fallbackProperties?.grib_steps || null;
+  const coverageFraction = regionData?.coverage_fraction ?? fallbackProperties?.coverage_fraction;
   const analogs = Array.isArray(regionData?.analogs) ? regionData.analogs : [];
 
   const isFixtureEvidence =
@@ -139,7 +216,11 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, onSe
         <div class="inspector-alert alert-info">
           <div class="alert-icon">ℹ️</div>
           <div class="alert-body">
-            Full regional diagnostics are not supplied for this replay selection. Showing the replay fields that are available.
+            ${
+              detailError && detailError.status !== 404
+                ? `Regional diagnostics could not be loaded: ${escapeHtml(detailError.message)}. Showing only map fields supplied for this selection.`
+                : "Full regional diagnostics are not supplied for this replay selection. Showing the replay fields that are available."
+            }
           </div>
         </div>
       `
@@ -180,6 +261,11 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, onSe
             <span class="t-val font-mono">${escapeHtml(formatWindowInterval(validStartUtc, validEndUtc))}</span>
           </div>
 
+          <div class="telemetry-cell">
+            <span class="t-lbl">Regional Coverage</span>
+            <span class="t-val font-mono">${escapeHtml(formatCoverage(coverageFraction))}</span>
+          </div>
+
           ${
             confidence !== null && confidence !== undefined
               ? `
@@ -193,16 +279,10 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, onSe
         </div>
       </div>
 
-      <!-- Multi-lead values are intentionally not inferred from a single lead response. -->
       <div class="inspector-section">
         <div class="section-title">LEAD TRAJECTORY</div>
         <div class="trajectory-card">
-          <div class="trajectory-notice">
-            <span class="trajectory-notice-title">One lead is currently selected</span>
-            <span class="trajectory-notice-desc">
-              A lead curve appears only when the frozen region artifact supplies values across leads. This panel never infers intermediate values.
-            </span>
-          </div>
+          ${renderLeadTrajectory(leadCurve, lead)}
         </div>
       </div>
 
@@ -248,6 +328,11 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, onSe
       <!-- Caveats and Provenance -->
       <div class="inspector-section inspector-caveats-section">
         <div class="section-title">CONTRACT &amp; CAVEATS</div>
+        <dl class="region-provenance-grid">
+          <div><dt>Source key</dt><dd class="font-mono">${escapeHtml(sourceKey || "Not supplied")}</dd></div>
+          <div><dt>GRIB steps</dt><dd class="font-mono">${escapeHtml(gribSteps || "Not supplied")}</dd></div>
+          <div class="region-provenance-wide"><dt>Provenance</dt><dd class="font-mono">${escapeHtml(provenance)}</dd></div>
+        </dl>
         <ul class="caveats-list">
           ${caveats.map((c) => `<li>${escapeHtml(c)}</li>`).join("")}
           <li>Data mode: <code class="font-mono">${escapeHtml(dataMode)}</code></li>
@@ -256,4 +341,8 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, onSe
       </div>
     </div>
   `;
+
+  panel.querySelectorAll("[data-curve-lead]").forEach((button) => {
+    button.addEventListener("click", () => onSelectLead?.(Number(button.dataset.curveLead)));
+  });
 }

@@ -26,7 +26,10 @@ export function formatProbability(prob) {
   if (prob === null || prob === undefined || Number.isNaN(Number(prob))) {
     return "Unavailable";
   }
-  return `${Math.round(Number(prob) * 100)}%`;
+  // Whole-percent rounding made distinct low-risk values (for example 1.52%
+  // and 1.61%) appear identical. Preserve two decimal places for every score
+  // supplied by the server; the risk tier remains the server-reported tier.
+  return `${(Number(prob) * 100).toFixed(2)}%`;
 }
 
 /**

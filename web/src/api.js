@@ -49,6 +49,27 @@ export const getRegion = (regionId, init, lead) =>
 export const getEvaluation = () => request("/v1/evaluation");
 
 /**
+ * Request the supplied regional records for all fixed leads.
+ *
+ * Results intentionally preserve an absent/error state per lead rather than
+ * filling values from neighbouring days. The inspector can therefore render a
+ * curve only from actual API responses and retain Day 10 as unavailable.
+ */
+export async function getRegionLeadCurve(regionId, init) {
+  const leads = Array.from({ length: 10 }, (_, index) => index + 1);
+  return Promise.all(
+    leads.map(async (lead) => {
+      try {
+        const data = await getRegion(regionId, init, lead);
+        return { lead, data, error: null };
+      } catch (error) {
+        return { lead, data: null, error };
+      }
+    })
+  );
+}
+
+/**
  * Discovers available initialization dates dynamically from the API contract.
  * @returns {Promise<string[]>}
  */

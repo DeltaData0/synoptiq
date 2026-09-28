@@ -4,7 +4,7 @@
  * bottom trust strip, and truth-preserving error states.
  */
 
-import { getAvailableInits, getEvaluation, getHealth, getRegion, getReplay } from "./api.js";
+import { getAvailableInits, getEvaluation, getHealth, getRegion, getRegionLeadCurve, getReplay } from "./api.js";
 import { setupControls } from "./controls.js";
 import {
   clearMapEmptyState,
@@ -14,6 +14,7 @@ import {
 } from "./empty_state.js";
 import { createMap } from "./map.js";
 import { renderRegion } from "./region.js";
+import { normalizeLeadCurveItem, normalizeRegion, normalizeReplay } from "./replay_adapter.js";
 import { renderTrust } from "./trust.js";
 import "./styles.css";
 
@@ -25,6 +26,7 @@ const state = {
   currentReplay: null,
   availableInits: ["2018-08-01"],
   dataMode: "fixture",
+  regionRequestId: 0,
 };
 
 // DOM references
@@ -58,8 +60,8 @@ const map = createMap(
     state.selectedRegionId = regionId;
     await loadRegionDetails(regionId, feature?.properties);
   },
-  (mode) => {
-    controlsHandle?.updateLegend(mode);
+  (mode, dataMode) => {
+    controlsHandle?.updateLegend(mode, dataMode);
   }
 );
 
@@ -67,30 +69,44 @@ const map = createMap(
  * Loads and displays regional inspector details.
  */
 async function loadRegionDetails(regionId, fallbackProperties) {
+  const requestId = ++state.regionRequestId;
+  const init = state.init;
+  const lead = state.lead;
+  let regionData = null;
+  let detailError = null;
+
   try {
-    const regionData = await getRegion(regionId, state.init, state.lead);
-    renderRegion(regionPanelEl, {
-      regionData,
-      fallbackProperties,
-      lead: state.lead,
-      onSelectLead: (l) => loadReplay(state.init, l),
-    });
-  } catch (err) {
-    // If the region details endpoint returns 404 (common in fixture where only 1 cell has deep diagnostics),
-    // truthfully render the map feature properties with an honest fallback notice.
-    renderRegion(regionPanelEl, {
-      regionData: null,
-      fallbackProperties: fallbackProperties || { region_id: regionId, lead_day: state.lead },
-      lead: state.lead,
-      onSelectLead: (l) => loadReplay(state.init, l),
-    });
+    regionData = normalizeRegion(await getRegion(regionId, init, lead));
+  } catch (error) {
+    detailError = error;
   }
+
+  // The curve is built only from independently supplied per-lead responses.
+  // No intermediate probability or threshold is interpolated by the client.
+  const curveResponses = await getRegionLeadCurve(regionId, init);
+  if (requestId !== state.regionRequestId || init !== state.init || lead !== state.lead) return;
+
+  const leadCurve = curveResponses.map(({ lead: curveLead, data, error }) =>
+    normalizeLeadCurveItem(curveLead, data, error)
+  );
+
+  renderRegion(regionPanelEl, {
+    regionData,
+    fallbackProperties: fallbackProperties || { region_id: regionId, lead_day: lead },
+    lead,
+    leadCurve,
+    detailError,
+    onSelectLead: (selectedLead) => loadReplay(init, selectedLead),
+  });
 }
 
 /**
  * Loads replay GeoJSON for the current init date and lead day.
  */
 async function loadReplay(newInit, newLead) {
+  // Invalidate an inspector request made for a previous date/lead before the
+  // map changes, so late responses cannot overwrite the new selection.
+  state.regionRequestId += 1;
   state.init = newInit ?? state.init;
   state.lead = Number(newLead ?? state.lead);
 
@@ -103,7 +119,7 @@ async function loadReplay(newInit, newLead) {
   renderMapLoadingState(mapOverlayEl, { lead: state.lead });
 
   try {
-    const replay = await getReplay(state.init, state.lead);
+    const replay = normalizeReplay(await getReplay(state.init, state.lead));
     state.currentReplay = replay;
     updateModeChrome(replay.data_mode);
     clearMapEmptyState(mapOverlayEl);

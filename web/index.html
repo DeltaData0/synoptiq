@@ -48,6 +48,24 @@
           <span class="telemetry-val font-mono" id="nav-window-semantics">Awaiting replay data</span>
         </div>
 
+        <!-- UI Wrapper Pills for Video Demo & Submission Transparency -->
+        <button type="button" class="telemetry-btn-pill nav-pill-wrapper" id="btn-nav-scope" title="Operational Scope Notice: GEFSv12 research prototype; not NCUM/NEPS validation.">
+          <span class="pill-dot dot-scope"></span>
+          <span class="pill-label">SCOPE:</span>
+          <span class="pill-val">PROTOTYPE</span>
+        </button>
+
+        <button type="button" class="telemetry-btn-pill nav-pill-wrapper" id="btn-nav-live" title="Live Forecast Mode: Inactive in research prototype (Offline frozen test replay only).">
+          <span class="pill-dot dot-offline"></span>
+          <span class="pill-label">LIVE FEED:</span>
+          <span class="pill-val">OFF (REPLAY)</span>
+        </button>
+
+        <button type="button" class="telemetry-btn-pill nav-pill-wrapper" id="btn-nav-model" title="Model Feature Scope: Active Reduced c00 (5 features) vs Phase 4 Roadmap.">
+          <span class="pill-dot dot-model"></span>
+          <span class="pill-label">MODEL:</span>
+          <span class="pill-val">REDUCED c00</span>
+        </button>
       </div>
 
       <div class="nav-status">
@@ -75,6 +93,227 @@
 
     <!-- Bottom Trust, Invariants and Operational Caveats Strip -->
     <footer class="trust-strip" id="trust" role="contentinfo"></footer>
+
+    <!-- Native Modal Dialog Overlays (Accessible Light-Dismiss) -->
+    <!-- 1. Operational Scope & Live Prediction Modal -->
+    <dialog class="app-modal" id="modal-operational-scope" aria-labelledby="title-scope">
+      <div class="modal-dialog-inner">
+        <div class="modal-header">
+          <div class="modal-title-row">
+            <span class="modal-badge-amber">OPERATIONAL SCOPE</span>
+            <h2 class="modal-title" id="title-scope">Operational Scope &amp; Pipeline Status</h2>
+          </div>
+          <button type="button" class="btn-modal-close" data-close-modal="modal-operational-scope" aria-label="Close dialog">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-grid-2col">
+            <div class="modal-card">
+              <div class="modal-card-icon">🔬</div>
+              <h3 class="modal-card-title">Research Prototype Boundary</h3>
+              <p class="modal-card-text">
+                Synoptiq is a CPU-first, local research prototype replaying historical GEFSv12 issue-time forecasts against IMD daily gridded rainfall. It is <strong>not</strong> an operational public warning service.
+              </p>
+              <div class="modal-card-badge badge-warning">NOT A PUBLIC WARNING SERVICE</div>
+            </div>
+
+            <div class="modal-card">
+              <div class="modal-card-icon">🏛️</div>
+              <h3 class="modal-card-title">NCUM / NEPS Integration Status</h3>
+              <p class="modal-card-text">
+                There is <strong>no live operational integration</strong> with NCUM/NEPS or agency warning feeds. All displayed probabilities are calibrated historical replays for research evaluation.
+              </p>
+              <div class="modal-card-badge badge-neutral">STANDALONE GEFSv12 PROTOTYPE</div>
+            </div>
+
+            <div class="modal-card">
+              <div class="modal-card-icon">📡</div>
+              <h3 class="modal-card-title">Live Prediction Feed (Stub UI)</h3>
+              <p class="modal-card-text">
+                Real-time operational NWP ingestion is deferred. The dashboard intentionally replays <strong>three frozen held-out test dates</strong> (2018–2019) rather than today's forecast.
+              </p>
+              <div class="modal-card-badge badge-neutral">OFFLINE REPLAY ONLY</div>
+            </div>
+
+            <div class="modal-card">
+              <div class="modal-card-icon">🛡️</div>
+              <h3 class="modal-card-title">Non-Negotiable Project Invariant</h3>
+              <p class="modal-card-text">
+                Every empirical demo must visibly state: <em>&ldquo;GEFSv12 reforecast research prototype; not NCUM/NEPS operational validation.&rdquo;</em> No simulated live warnings or agency dispatches are permitted.
+              </p>
+              <div class="modal-card-badge badge-success">INVARIANT ENFORCED</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <span class="modal-footer-note">Plan &sect;5 &bull; Non-negotiable research prototype boundary</span>
+          <button type="button" class="btn-primary" data-close-modal="modal-operational-scope">Acknowledge</button>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- 2. Model Feature Architecture & Roadmap Modal -->
+    <dialog class="app-modal" id="modal-feature-arch" aria-labelledby="title-arch">
+      <div class="modal-dialog-inner modal-dialog-lg">
+        <div class="modal-header">
+          <div class="modal-title-row">
+            <span class="modal-badge-cyan">MODEL ARCHITECTURE</span>
+            <h2 class="modal-title" id="title-arch">Model Feature Architecture &amp; Roadmap</h2>
+          </div>
+          <button type="button" class="btn-modal-close" data-close-modal="modal-feature-arch" aria-label="Close dialog">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="feature-comparison-grid">
+            <div class="feature-col feature-col-active">
+              <div class="feature-col-header">
+                <span class="col-pill pill-active">&#x2713; ACTIVE IN MVP (Reduced c00)</span>
+                <h3>Trained LightGBM Candidate</h3>
+                <p>Features active in current trained candidate model (fit on 1.28M 2010–2015 rows):</p>
+              </div>
+              <ul class="feature-list">
+                <li>
+                  <span class="feat-icon">🌧️</span>
+                  <div>
+                    <strong>f_control_mm</strong>
+                    <span>Control forecast rain total (24h accumulation aligned to 03–03 UTC)</span>
+                  </div>
+                </li>
+                <li>
+                  <span class="feat-icon">🗺️</span>
+                  <div>
+                    <strong>region_id</strong>
+                    <span>Fixed 2&deg; regional spatial index (65 supported land cells)</span>
+                  </div>
+                </li>
+                <li>
+                  <span class="feat-icon">☀️</span>
+                  <div>
+                    <strong>season</strong>
+                    <span>Climatological season (Monsoon, Post-monsoon, Winter, Pre-monsoon)</span>
+                  </div>
+                </li>
+                <li>
+                  <span class="feat-icon">📅</span>
+                  <div>
+                    <strong>lead_day &amp; lead_bucket</strong>
+                    <span>Discrete lead day (Day 1–9) and bucketed forecast horizon</span>
+                  </div>
+                </li>
+              </ul>
+              <div class="feature-col-footer">
+                <span>Calibrator: Platt Sigmoid (2016–2017 validation fit)</span>
+              </div>
+            </div>
+
+            <div class="feature-col feature-col-deferred">
+              <div class="feature-col-header">
+                <span class="col-pill pill-deferred">&#x23F3; ROADMAP / DEFERRED (Phase 4)</span>
+                <h3>Staged Multi-Level Ingestion</h3>
+                <p>Features deferred from current candidate (UI wrappers represent these claims):</p>
+              </div>
+              <ul class="feature-list">
+                <li class="feat-item-deferred">
+                  <span class="feat-icon">📊</span>
+                  <div>
+                    <strong>Ensemble Spread (p01–p04 std dev)</strong>
+                    <span>Deferred: perturbation members p01–p04 not in current corpus</span>
+                  </div>
+                </li>
+                <li class="feat-item-deferred">
+                  <span class="feat-icon">💧</span>
+                  <div>
+                    <strong>Atmospheric Moisture (q850)</strong>
+                    <span>Deferred: 850 hPa specific humidity requires multi-level GRIB decoding</span>
+                  </div>
+                </li>
+                <li class="feat-item-deferred">
+                  <span class="feat-icon">🧭</span>
+                  <div>
+                    <strong>Surface Pressure (MSLP)</strong>
+                    <span>Deferred: mean sea level pressure sounding layers</span>
+                  </div>
+                </li>
+                <li class="feat-item-deferred">
+                  <span class="feat-icon">🌀</span>
+                  <div>
+                    <strong>Wind &amp; Circulation (u, v, gh500)</strong>
+                    <span>Deferred: 10m wind vectors &amp; 500 hPa geopotential height</span>
+                  </div>
+                </li>
+                <li class="feat-item-deferred">
+                  <span class="feat-icon">📉</span>
+                  <div>
+                    <strong>Precipitation Quantiles (q10–q90)</strong>
+                    <span>Deferred: multi-member ensemble distribution quantiles</span>
+                  </div>
+                </li>
+              </ul>
+              <div class="feature-col-footer">
+                <span>UI Wrappers truthfully indicate deferred status</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <span class="modal-footer-note">Candidate model artifacts frozen in <code>artifacts/model/reduced_c00_model.txt</code></span>
+          <button type="button" class="btn-primary" data-close-modal="modal-feature-arch">Close</button>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- 3. Corpus & Replay Dates Modal -->
+    <dialog class="app-modal" id="modal-corpus-dates" aria-labelledby="title-corpus">
+      <div class="modal-dialog-inner">
+        <div class="modal-header">
+          <div class="modal-title-row">
+            <span class="modal-badge-cyan">DATA CORPUS</span>
+            <h2 class="modal-title" id="title-corpus">10-Year Historical Corpus &amp; Benchmark Replay</h2>
+          </div>
+          <button type="button" class="btn-modal-close" data-close-modal="modal-corpus-dates" aria-label="Close dialog">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-card mb-3">
+            <h3 class="modal-card-title">Full 10-Year Chronological Corpus (2010&ndash;2019)</h3>
+            <p class="modal-card-text">
+              The Synoptiq dataset pipeline processes 10 years of aligned GEFSv12 forecasts and IMD daily observations:
+            </p>
+            <div class="split-timeline">
+              <div class="split-block split-train">
+                <strong>TRAINING SPLIT</strong>
+                <span class="font-mono">2010&ndash;2015</span>
+                <small>1,281,735 eligible rows</small>
+                <span class="split-use">Threshold q90 &amp; LightGBM fitting</span>
+              </div>
+              <div class="split-block split-val">
+                <strong>VALIDATION SPLIT</strong>
+                <span class="font-mono">2016&ndash;2017</span>
+                <small>427,635 eligible rows</small>
+                <span class="split-use">Platt sigmoid calibration fitting</span>
+              </div>
+              <div class="split-block split-test">
+                <strong>HELD-OUT TEST SPLIT</strong>
+                <span class="font-mono">2018&ndash;2019</span>
+                <small>427,050 eligible rows</small>
+                <span class="split-use">Brier score &amp; reliability evaluation</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-card">
+            <h3 class="modal-card-title">Why 3 Frozen Dates in the Interactive Dashboard?</h3>
+            <p class="modal-card-text">
+              To guarantee instant, zero-latency offline performance and avoid multi-gigabyte memory overhead during demonstrations, the web dashboard bundles <strong>three frozen benchmark test dates</strong> (<code>2018-01-01</code>, <code>2019-01-01</code>, <code>2019-12-31</code>). The full corpus remains archived in <code>data/processed/rows.parquet</code> for end-to-end retraining.
+            </p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <span class="modal-footer-note">Frozen chronological split policy defined in <code>config/splits.yaml</code></span>
+          <button type="button" class="btn-primary" data-close-modal="modal-corpus-dates">Close</button>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- 4. Held-Out Reliability Diagram Modal (Populated dynamically) -->
+    <dialog class="app-modal" id="modal-reliability" aria-label="Reliability Diagram and Calibration Curve"></dialog>
 
     <script type="module" src="/src/main.js"></script>
   </body>

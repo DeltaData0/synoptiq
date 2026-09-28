@@ -12,7 +12,7 @@ import { renderLegend } from "./legend.js";
  * @param {HTMLElement} container
  * @param {object} options
  */
-export function setupControls(container, { inits, selectedInit, selectedLead, onInitChange, onLeadChange }) {
+export function setupControls(container, { inits, selectedInit, selectedLead, onInitChange, onLeadChange, onOpenCorpusInfo, onOpenFeatureArch }) {
   container.innerHTML = `
     <div class="dock-section">
       <div class="dock-title-row">
@@ -33,6 +33,10 @@ export function setupControls(container, { inits, selectedInit, selectedLead, on
               .join("")}
           </select>
         </div>
+        <div class="init-corpus-meta">
+          <span class="corpus-tag">3 Benchmark Dates</span>
+          <button type="button" class="btn-corpus-info font-mono" id="btn-open-corpus-info" title="View 10-Year historical corpus split architecture">10-Yr Corpus Info ℹ️</button>
+        </div>
       </div>
 
       <div class="control-group">
@@ -47,27 +51,30 @@ export function setupControls(container, { inits, selectedInit, selectedLead, on
               const isSelected = day === selectedLead;
               const isDay10 = day === 10;
               const tooltip = isDay10
-                ? "Day 10 is unavailable because the exact +240–+243-hour accumulation is not evidenced."
+                ? "Day 10 is strictly unavailable because the exact +240–+243-hour accumulation is not evidenced. No risk probability is fabricated."
                 : `Lead Day ${day}`;
 
               return `
                 <button
                   type="button"
-                  class="btn-lead ${isSelected ? "btn-lead-active" : ""} ${isDay10 ? "btn-lead-day10" : ""}"
+                  class="btn-lead ${isSelected ? "btn-lead-active" : ""} ${isDay10 ? "btn-lead-day10 btn-lead-gray" : ""}"
                   data-lead="${day}"
                   title="${escapeHtml(tooltip)}"
                   aria-pressed="${isSelected ? "true" : "false"}"
                 >
                   <span class="lead-num">D${day}</span>
-                  ${isDay10 ? '<span class="lead-badge-gray">N/A</span>' : ""}
+                  ${isDay10 ? '<span class="lead-badge-gray">UNAVAIL</span>' : ""}
                 </button>
               `;
             })
             .join("")}
         </div>
-        <p class="lead-hint">
-          Day 10 remains unavailable unless its exact accumulation interval is evidenced.
-        </p>
+        <div class="lead-policy-card">
+          <span class="policy-icon">⚠️</span>
+          <div class="policy-body">
+            <strong>Day 10 Policy:</strong> Probabilities exist strictly for <strong>Day 1–9</strong>. Day 10 remains gray/unavailable because the exact +240–+243h accumulation interval is not evidenced in the archive.
+          </div>
+        </div>
       </div>
     </div>
 
@@ -88,13 +95,41 @@ export function setupControls(container, { inits, selectedInit, selectedLead, on
         </div>
         <div>
           <dt>Spatial Unit</dt>
-          <dd id="spec-domain">Fixed 2° India-land grid</dd>
+          <dd id="spec-domain">Fixed 2° India-land grid (65 scored / 47 peripheral)</dd>
         </div>
         <div>
           <dt>Window Semantics</dt>
           <dd id="spec-window">Awaiting replay data</dd>
         </div>
+        <div>
+          <dt>Spread Baseline</dt>
+          <dd class="text-warning">Unavailable (p01–p04 absent)</dd>
+        </div>
       </dl>
+    </div>
+
+    <!-- Model feature scope sits at the end of the dock: it is useful context,
+         but never competes with issue-time controls or current-map evidence. -->
+    <div class="dock-section dock-model-section">
+      <div class="dock-title-row">
+        <span class="dock-eyebrow">MODEL FEATURE ARCHITECTURE</span>
+        <button type="button" class="btn-link-action font-mono" id="btn-open-feature-arch">Roadmap &rarr;</button>
+      </div>
+      <div class="feature-status-summary">
+        <div class="feat-status-block feat-status-active">
+          <div class="feat-status-head">
+            <span class="feat-badge-active">&check; 5 ACTIVE FEATURES (c00)</span>
+          </div>
+          <p class="feat-desc font-mono">f_control_mm &bull; region &bull; season &bull; lead_day &bull; bucket</p>
+        </div>
+
+        <div class="feat-status-block feat-status-deferred">
+          <div class="feat-status-head">
+            <span class="feat-badge-deferred">&hourglass; ROADMAP / DEFERRED</span>
+          </div>
+          <p class="feat-desc">Ensemble spread (p01–p04), q850 moisture, pressure, and wind vectors are deferred to Phase 4 multi-level ingestion.</p>
+        </div>
+      </div>
     </div>
   `;
 
@@ -118,6 +153,17 @@ export function setupControls(container, { inits, selectedInit, selectedLead, on
       onLeadChange(lead);
     });
   });
+
+  // Bind info modals
+  const corpusBtn = container.querySelector("#btn-open-corpus-info");
+  if (corpusBtn && onOpenCorpusInfo) {
+    corpusBtn.addEventListener("click", onOpenCorpusInfo);
+  }
+
+  const archBtn = container.querySelector("#btn-open-feature-arch");
+  if (archBtn && onOpenFeatureArch) {
+    archBtn.addEventListener("click", onOpenFeatureArch);
+  }
 
   return {
     updateSelectedLead(lead) {

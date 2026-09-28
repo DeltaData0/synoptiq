@@ -401,6 +401,31 @@ export function createMap(containerElement, onSelectRegion, onModeChange) {
     }
 
     // Default 'bust' mode
+    const isDay10 = Number(cachedLead) === 10;
+    const cov = p.coverage_fraction ?? (p.is_land_supported ? 1.0 : 0);
+    const isPeripheral = p.is_land_supported === false || cov < 0.80;
+
+    if (isDay10) {
+      return {
+        fillColor: "#334155",
+        fillOpacity: isSelected ? 0.9 : 0.4,
+        color: isSelected ? "#38bdf8" : "#475569",
+        weight: isSelected ? 3 : 1,
+        opacity: 0.7,
+      };
+    }
+
+    if (isPeripheral) {
+      return {
+        fillColor: "#1e293b",
+        fillOpacity: isSelected ? 0.85 : 0.35,
+        color: isSelected ? "#38bdf8" : "#475569",
+        weight: isSelected ? 3 : 1.25,
+        dashArray: "3, 4",
+        opacity: 0.75,
+      };
+    }
+
     const tier = p.tier || "no_data";
     const fillColor = getTierColor(tier);
     const strokeColor = getTierStroke(tier);
@@ -447,29 +472,30 @@ export function createMap(containerElement, onSelectRegion, onModeChange) {
 
     if (hudLead) hudLead.textContent = `Lead Day ${activeLead}`;
     if (hudSummary) {
-      // Do not coerce null with Number(null): JavaScript turns it into zero and
-      // would falsely count no-data regions as scored.
-      const scored = features.filter(
-        (feature) => typeof feature.properties?.p_bust === "number" && Number.isFinite(feature.properties.p_bust)
-      ).length;
-      const high = features.filter((feature) => feature.properties?.tier === "high").length;
-      const unavailable = features.filter(
-        (feature) => feature.properties?.tier === "no_data" || feature.properties?.window_quality === "unavailable"
-      ).length;
-      hudSummary.textContent = `${features.length} regions · ${scored} scored · ${high} high · ${unavailable} unavailable`;
+      const isDay10 = Number(activeLead) === 10;
+      if (isDay10) {
+        hudSummary.textContent = "112 regions · All Day 10 unavailable (+240–+243h not evidenced)";
+      } else {
+        const scored = features.filter(
+          (feature) => typeof feature.properties?.p_bust === "number" && Number.isFinite(feature.properties.p_bust)
+        ).length;
+        const peripheral = features.filter(
+          (feature) => feature.properties?.is_land_supported === false || (feature.properties?.coverage_fraction ?? 1) < 0.80
+        ).length;
+        hudSummary.textContent = `${scored} scored land regions (≥80% IMD) · ${peripheral} peripheral no-data`;
+      }
     }
     if (hudWindow) {
-      if (firstFeature?.valid_start_utc && firstFeature?.valid_end_utc) {
+      if (Number(activeLead) === 10) {
+        hudWindow.textContent = "Unavailable (+240–+243h not evidenced)";
+      } else if (firstFeature?.valid_start_utc && firstFeature?.valid_end_utc) {
         hudWindow.textContent = `${formatUtcTime(firstFeature.valid_start_utc)} → ${formatUtcTime(
           firstFeature.valid_end_utc
         )}`;
       } else if (firstFeature?.window_quality === "approximate") {
         hudWindow.textContent = "Approximate window";
       } else if (firstFeature?.window_quality === "unavailable") {
-        hudWindow.textContent =
-          Number(activeLead) === 10
-            ? "Unavailable (+240–+243h not evidenced)"
-            : "Interval unavailable";
+        hudWindow.textContent = "Interval unavailable";
       } else {
         hudWindow.textContent = "Interval unavailable";
       }
@@ -547,30 +573,56 @@ export function createMap(containerElement, onSelectRegion, onModeChange) {
       pane: "gridPane",
       style: (feature) => getFeatureStyle(feature, feature.properties.region_id === selectedId),
       onEachFeature: (feature, layer) => {
-        const p = feature.properties;
-        const tierMeta = PALETTE[p.tier] || PALETTE.no_data;
-        const probText = formatProbability(p.p_bust);
-        const thresholdText = p.threshold_mm !== null && p.threshold_mm !== undefined ? `${p.threshold_mm} mm` : "N/A";
-        const reasonHtml = p.no_data_reason
-          ? `<div class="map-tooltip-reason">⚠️ ${escapeHtml(p.no_data_reason)}</div>`
-          : "";
+        const p = feature.properties || {};
+        const tier = p.tier || "no_data";
+        const TIER_META = { high: { label: "High Risk" }, medium: { label: "Medium Risk" }, low: { label: "Low Risk" }, no_data: { label: "No Data" } };
+        const tierMeta = TIER_META[tier] || TIER_META.no_data;
+        const covPct = Math.round(((p.coverage_fraction ?? (p.is_land_supported ? 1.0 : 0)) * 100));
+        const isPeripheral = p.is_land_supported === false || (p.coverage_fraction !== null && p.coverage_fraction !== undefined && Number(p.coverage_fraction) < 0.80);
+        const isDay10 = Number(cachedLead) === 10;
+        const probText = Number.isFinite(Number(p.p_bust)) ? `${(Number(p.p_bust) * 100).toFixed(2)}%` : "—";
+        const thresholdText = Number.isFinite(Number(p.threshold_mm)) ? `${Number(p.threshold_mm).toFixed(1)} mm` : "—";
+
+        const badgeHtml = isDay10
+          ? '<span class="map-tooltip-badge tier-no_data">Day 10 Unavailable</span>'
+          : isPeripheral
+          ? '<span class="map-tooltip-badge tier-no_data">Peripheral (&lt;80%)</span>'
+          : `<span class="map-tooltip-badge tier-${p.tier}">${escapeHtml(tierMeta.label)}</span>`;
+
+        let reasonHtml = "";
+        if (isDay10) {
+          reasonHtml = '<div class="map-tooltip-reason">⚠️ Day 10 scoring unavailable: exact +240–+243h accumulation interval not evidenced in archive. No risk fabricated.</div>';
+        } else if (isPeripheral) {
+          reasonHtml = `<div class="map-tooltip-reason">🌐 Peripheral Grid Cell: IMD land coverage ${covPct}% (&lt; 80% threshold). Excluded from model scoring.</div>`;
+        } else if (p.no_data_reason) {
+          reasonHtml = `<div class="map-tooltip-reason">⚠️ ${escapeHtml(p.no_data_reason)}</div>`;
+        }
 
         const probPct = Number.isFinite(Number(p.p_bust)) ? Number(p.p_bust) * 100 : 0;
-        const meterHtml = p.p_bust !== null
+        const meterHtml = !isDay10 && p.p_bust !== null
           ? `<div class="tooltip-meter-track">
                <div class="tooltip-meter-fill tier-${p.tier}" style="width: ${probPct}%;"></div>
              </div>`
           : "";
 
-        const validWindow = p.valid_start_utc && p.valid_end_utc
+        const validWindow = isDay10
+          ? "Unavailable (+240–+243h not evidenced)"
+          : p.valid_start_utc && p.valid_end_utc
           ? `${formatUtcTime(p.valid_start_utc)} → ${formatUtcTime(p.valid_end_utc)}`
           : p.window_quality === "unavailable"
           ? "Unavailable"
           : "Interval unavailable";
-        const forecastText = Number.isFinite(Number(p.f_control_mm))
+        const forecastText = isDay10
+          ? "Unavailable"
+          : Number.isFinite(Number(p.f_control_mm))
           ? `${Number(p.f_control_mm).toFixed(1)} mm`
           : "Forecast total unavailable in fixture";
-        const rainStat = currentMode === "forecast"
+        const rainStat = isDay10
+          ? `<div class="map-tooltip-stat">
+               <span class="stat-lbl">Status:</span>
+               <span class="stat-val font-mono text-warning">Unavailable</span>
+             </div>`
+          : currentMode === "forecast"
           ? `<div class="map-tooltip-stat">
                <span class="stat-lbl">Forecast Rain:</span>
                <span class="stat-val ${Number.isFinite(Number(p.f_control_mm)) ? "font-mono" : "text-muted"}">${escapeHtml(forecastText)}</span>
@@ -589,14 +641,16 @@ export function createMap(containerElement, onSelectRegion, onModeChange) {
           <div class="map-tooltip-card">
             <div class="map-tooltip-header">
               <span class="map-tooltip-id">${escapeHtml(p.region_id)}</span>
-              <span class="map-tooltip-badge tier-${p.tier}">${escapeHtml(tierMeta.label)}</span>
+              ${badgeHtml}
             </div>
             <div class="map-tooltip-body">
               ${rainStat}
               <div class="map-tooltip-stat">
                 <span class="stat-lbl">Window:</span>
                 <span class="stat-val font-mono">${escapeHtml(
-                  p.window_quality === "exact"
+                  isDay10
+                    ? "Unavailable (+240–+243h)"
+                    : p.window_quality === "exact"
                     ? `Exact · ${validWindow}`
                     : p.window_quality === "approximate"
                     ? "Approximate"

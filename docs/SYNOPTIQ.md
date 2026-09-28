@@ -144,7 +144,23 @@ For initialization `init` and lead `L`, the selected daily interval is:
 
 GRIB accumulations must tile that interval without gaps or double-counting. Where messages describe overlapping accumulations, appropriate differences isolate the needed subintervals. Stored provenance preserves the **actual GRIB arithmetic**, not just the nominal target window.
 
-The pilot audit independently summed a real eight-part 03–27 UTC point total to **8.24 mm**, matching the code. That validates an accumulation calculation, not regional model skill.
+The D1-04 audit was signed on **27 September 2026 by Kanishka Pandey**, the project decision owner. It permits exact Day 1–9 label construction, not a performance claim. The retained arithmetic below preserves the substance of that audit.
+
+At 20°N, 78°E, the actual `gefs-20180801-p01-apcp` pilot provided these amounts for the IMD label 2018-08-02:
+
+| Hours after 2018-08-01 00 UTC | Source accumulation arithmetic | Derived mm |
+| --- | --- | ---: |
+| 03–06 | `0–6: 0.70` minus `0–3: 0.56` | 0.14 |
+| 06–09 | `6–9: 0.40` | 0.40 |
+| 09–12 | `6–12: 2.80` minus `6–9: 0.40` | 2.40 |
+| 12–15 | `12–15: 3.40` | 3.40 |
+| 15–18 | `12–18: 4.90` minus `12–15: 3.40` | 1.50 |
+| 18–21 | `18–21: 0.30` | 0.30 |
+| 21–24 | `18–24: 0.30` minus `18–21: 0.30` | 0.00 |
+| 24–27 | `24–27: 0.10` | 0.10 |
+| **03–27 total** | **Eight non-overlapping three-hour amounts** | **8.24** |
+
+The recorded `exact_24h_total` call returned the same **8.24 mm**. IMD at that coordinate and date was **0.69903475 mm**. This is a perturbed-member point-level accumulation check, not the c00 regional training target or a model-skill result. The convention uses half-open intervals so adjacent windows do not double-count endpoints.
 
 ### Day 10
 
@@ -158,7 +174,15 @@ The fixed lattice uses even-integer centers from 8–36°N and 68–98°E. Each 
 
 The current rule measures valid grid support against the nominal 64-position region. It does **not** mean that 80% of a region has independent rain gauges. Thirteen northern-edge land points are excluded because the source grid does not support a complete cell there; 4,951 of 4,964 land points are captured by the intersecting lattice.
 
-Regional hand checks include a full 64/64 cell and rejected 28/64 and 51/64 examples. A 51/64 fraction is approximately 79.69%, below the rule. Missing support is never treated as zero rainfall or zero bust probability.
+Recorded regional hand checks used the IMD date 2018-08-02:
+
+| Region | Valid positions / 64 | Hand check and outcome |
+| --- | ---: | --- |
+| `R20N-078E` | 64 | Sum 171.810974 mm / 64 = **2.6845465 mm** regional mean; code matched and accepted coverage. |
+| `R10N-076E` | 28 | Coverage **0.4375**; valid-land mean 6.0870004 mm, but regional verification withheld. Filling ocean NaNs with zero would incorrectly reduce the mean to about 2.663 mm. |
+| `R22N-070E` | 51 | Coverage **0.796875**, below 0.80; withheld even though close to the boundary. |
+
+Missing support is never treated as zero rainfall or zero bust probability. The two pilot years had identical static masks: 4,964 valid land positions and 12,451 always-missing positions, with coordinates 6.5–38.5°N and 66.5–100°E at 0.25° spacing. Region generation checks complete 8×8 geometry and semantic equality between `config/regions_2deg.geojson` and `web/src/regions_grid.json`.
 
 Region names encode centers, not administrative districts. The dashboard's orientation outline comes from the IMD grid mask and is not an official political boundary.
 
@@ -198,6 +222,42 @@ The final acquisition sign-off records **3,652 completed items, zero failed item
 The acquisition and audit history produced concrete safeguards: a mismatched pilot was re-downloaded and verified rather than trusted by filename; source keys retain actual remote identities; stored steps reflect real accumulation arithmetic; January observations cover the year boundary; unavailable rows do not acquire fabricated coverage or labels. One source object with duplicate GRIB messages was accepted only after identical interval/shape/value duplicates were distinguished from conflicting data.
 
 These are part of the reproducibility design, not incidental download details. A rolling recent forecast feed is not a substitute for this historical corpus.
+
+### Retained source-pilot evidence
+
+The pilot identities below are preserved from the signed audit and manifest. They document past real decoding; they do not imply the raw files must remain on disk after streaming cleanup.
+
+| Record | Observed identity and decode |
+| --- | --- |
+| GEFS c00 pilot | `GEFSv12/reforecast/2018/2018080100/c00/Days:1-10/apcp_sfc_2018080100_c00.grib2`; **28,987,248 bytes**; ETag `ed0cae037f26554470a6321f071eed34`. |
+| c00 metadata | `tp`, `stepType=accum`, `kg m**-2` (numerically mm of water), member 0, 00 UTC, 721×1440 regular 0.25° grid, 80 messages, steps +3…+240. Overlapping ranges include `0–3`, `0–6`, `6–9`, and `6–12`. |
+| Other pilot fields | p01–p04 decoded as members 1–4; control PWAT as `pwat`, instantaneous, `kg m**-2`. These are pilot evidence only. |
+| Beyond-Day-10 pilot | First precipitation message `240–246`, accumulated, on a 361×720 0.5° grid; no exact `240–243` amount established. |
+| IMD pilot retrieval | Official selector submitted to `https://imdpune.gov.in/cmpg/Griddata/RF25.php` with `RF25=2017` and `RF25=2018`; responses named the respective annual NetCDFs. |
+| IMD pilot decode | Each year had 365 date coordinates, `RAINFALL` in mm, 129×135 geometry, and 4,544,615 missing values across its daily grids. |
+
+Recorded SHA-256 values:
+
+```text
+Verified GEFS 2018-08-01 c00 pilot:
+11ad16be864bef08eed6a038e888b0b0d9013ce17a95a2cea3684ee8f137be44
+IMD 2017:
+49786e2d2b661c5d3bcfb3ffd90385c1133ec27a8a04bf272ff2df5029106a9c
+IMD 2018:
+26bd53aeb2d6f3f7d39516c41606db005dede474906b33462d1a0caef69cd6ec
+```
+
+The older ambiguous c00 local file was **36,773,744 bytes**, not the verified remote size, and was excluded as unverified. All eleven annual IMD files later passed full-year date-axis checks, including leap years, variable/units, and geometry. Source-level identities remain in [DATA_MANIFEST.csv](../DATA_MANIFEST.csv).
+
+### Corpus and build safeguards
+
+Completeness compares the exact expected date set, not a filename count. A duplicate date, out-of-range initialization, or p01-only substitute cannot satisfy required c00 coverage. A qualifying decoded record includes `source=gefs`, `status=decoded`, `variable=apcp_sfc`, `member=c00`, an observed key/URL, units, explicit 00 UTC initialization, and finite forward accumulation hours with `0 <= start < end`. File resolution verifies size and SHA-256 and rejects ambiguous identities.
+
+GRIB validation checks member, initialization, units, geometry, accumulation semantics, and interval coverage. Conflicting duplicate intervals fail; later streaming hardening permits only proven identical duplicates. Annual IMD validation rejects missing, duplicated, or replaced calendar dates.
+
+Threshold fitting removes any pre-existing `threshold_mm` and `bust` before a many-to-one merge, preserves row order, and excludes unavailable/Day-10 rows. Day 10 also retains null `imd_year`. Final Parquet publication is atomic: failure does not leave a partial file masquerading as a completed dataset.
+
+The D1-07 completion record reports 115 tests passing and one local-data test skipped, alongside lint, web-build, fixture-smoke, and whitespace checks. These are historical results for that milestone, **not the current test count or a new test run**. Earlier missing-corpus and smaller test-suite entries are superseded progress snapshots.
 
 ## 7. Architecture and technology
 
@@ -311,7 +371,14 @@ Feature-set SHA-256:
 8565c522cabe8226c01a5ba94d83e75ea47f83f196beca8962feca8baf32267e
 ```
 
-The underlying records are `artifacts/metrics/reduced_c00_evaluation.json`, `artifacts/model/reduced_c00_frozen_run.json`, and the saved calibrator/model metadata. These generated artifacts are local and Git-ignored. The recorded run includes a dirty worktree at commit `356f599`; it should not be described as training from a pristine tagged release.
+The underlying records include:
+
+- `artifacts/metrics/climatology_baseline_evaluation.json` — train-only comparator and held-out cohort.
+- `artifacts/metrics/reduced_c00_validation.json` — validation comparison and an earlier-case retrieval example.
+- `artifacts/metrics/reduced_c00_evaluation.json` — calibrated/uncalibrated held-out results and reliability bins.
+- `artifacts/model/reduced_c00_frozen_run.json` and `artifacts/model/reduced_c00_calibrator.json` — frozen configuration and validation-fitted calibration identity.
+
+These generated artifacts are local and Git-ignored. The recorded run includes a dirty worktree at commit `356f599`; it should not be described as training from a pristine tagged release. Replay export checks the manifest fingerprint and saved Booster hash before using test rows; it neither trains the candidate nor refits calibration.
 
 ## 10. A worked historical example
 
@@ -379,7 +446,7 @@ The completed dataset additionally carries `split`. UTC timestamps and `window_q
 | Location | Purpose |
 | --- | --- |
 | `README.md` | Entry point and quick start. |
-| `docs/` | This project reference and underlying research, decisions, audit, results, and release records. |
+| `docs/` | This consolidated project reference; predecessor Markdown documents are recoverable from Git history. |
 | `DATA_MANIFEST.csv` | Observed source identities, decoded metadata, and provenance. |
 | `config/` | Region geometry, label/split policies, and explanation groups. |
 | `src/bust/data/` | Inventory, acquisition, decoding, alignment, regions, labels, dataset construction. |
@@ -437,35 +504,46 @@ The original 72-hour plan established two critical boundaries: **D1-04**, provin
 
 The project then evolved through these decisions:
 
-| Decision group | Lasting consequence |
-| --- | --- |
-| D-001–D-003 | Rainfall-only GEFSv12/IMD research scope, chronological splits, and a visible distinction between fixtures and real evidence. |
-| D-004–D-005 | Audited 03–03 UTC mapping; exact Days 1–9; Day 10 withheld. |
-| D-006 | Fixed region geometry and the explicit 80% support rule. |
-| D-007 | IMD 2020 added only for late-2019 verification. |
-| D-008 | Reduced c00-only model approved for the deadline without abandoning the full long-term feature design. |
-| D-009 | Current control-rain and regional-context score evidence displayed without claiming physical causes. |
-| Documentation/layout work | Reader documentation collected under `docs/`, with separate screenshot/submission homes and stable pipeline paths. |
+| Decision | Recorded date | Lasting consequence and status |
+| --- | --- | --- |
+| D-001 | 2026-09-26 | Active rainfall-only GEFSv12/IMD regional research scope. |
+| D-002 | 2026-09-26 | 2010–15 / 2016–17 / 2018–19 split, no random rows. Original “pending data gate” wording is superseded by the completed corpus and applied split. |
+| D-003 | 2026-09-26 | Fixtures remain visibly distinct from empirical results. |
+| D-004 | 2026-09-26 | Day 10 initially withheld pending interval audit; D-005 supplies the resulting policy. |
+| D-005 | 2026-09-27 | Active 03–03 UTC mapping, exact Days 1–9, Day 10 unavailable; reopen if contrary official product-specific timing evidence appears. |
+| D-006 | 2026-09-27 | Active even-center, complete-cell 2° grid and ≥80% support rule, including peripheral no-data tracking and the northern-edge exclusion. |
+| D-007 | 2026-09-27 | Active verification-only IMD 2020 addition; no extra forecast years or changed split. Per-row interval arithmetic controls the exact January dates. |
+| D-008 | 2026-09-27 | Approved reduced c00-only release; full physical/ensemble groups deferred. Does not change labels, splits, regions, or timing. A full-feature successor needs new evidence. |
+| D-009 | 2026-09-27 | `forecast_control` and `regional_context` evidence groups added for D-008 only; no new predictor or causal claim. |
+| D-010 | 2026-09-28 | Submission/screenshots homes and documentation reorganization. Its original root-AGENTS exception was superseded by later relocation and this owner-requested consolidation. |
+
+**Documentation consolidation, 28 September 2026:** this file now holds the reader-facing decisions, audit evidence, method, results, milestones, and release requirements. The owner requested removal of the separate source Markdown files after merging. No scientific policy or acceptance status changed as a consequence.
 
 ### Recorded milestones
 
-| Tickets | Completion recorded | Scope and remaining distinction |
+| Ticket | Recorded status | Acceptance retained from the plan; scope qualification |
 | --- | --- | --- |
-| D1-01–D1-04 | Complete | Setup, source pilots, and signed time-window/Day-10 gate. |
-| D1-05–D1-07 | Complete | Regions/labels, offline fixture slice, and full real c00 dataset. |
-| D2-01 | Complete under explicit-status acceptance | Real climatology; spread-only remains unavailable. |
-| D2-02 | Complete | Real drill-down, lead values, intervals, and provenance. |
-| D2-03–D2-04 | Complete for D-008 | Reduced candidate, earlier analogs, frozen configuration, calibration, and honest test artifacts; not the full physical model. |
-| D2-05 | Complete in later log/roadmap | Real dataset → model → API → map → evidence/test-panel integration and recorded offline verification; `e2e-v1` sign-off recorded. |
-| D3-01 | Open | Complete the five-explanation audit and trust/API acceptance reconciliation. |
-| D3-02 | Open | Final video cut and results/caption check. |
-| D3-03 | Open | Provenance/licensing package and fresh-clone, second-machine acceptance. |
-| D3-04 | Open | Final merged release and assets, `submission-freeze`. |
-| D3-05 | Open | Export/rehearsal, working shared links, second-device check, submission receipt. |
+| D1-01 | Complete | Repository, roster, branch/review rules, source-manifest template, ownership, and schema posted. |
+| D1-02 | Complete | Real GEFS GRIB decodes; actual key, member, steps, units, grid, and bytes recorded. |
+| D1-03 | Complete | Both IMD pilot years decode; date axis and mask recorded. |
+| D1-04 | Complete — blocking gate | Signed daily-window audit and exact/approximate/unavailable verdict; exact Days 1–9 authorized, Day 10 unavailable. |
+| D1-05 | Complete | Fixed-region geometry, three hand checks, label/alignment tests, and no-data cases pass. |
+| D1-06 | Complete | Fixture API/map/provenance and offline smoke with visible fixture identity; `pilot-gate` milestone. |
+| D1-07 | Complete | Real split-aware rows, counts by year/lead/season, missingness, and train-only thresholds verified. |
+| D2-01 | Complete under explicit-status acceptance | Reproducible eligible climatology metrics; spread-only explicitly unavailable, not completed empirically. |
+| D2-02 | Complete | Region click and lead curve expose threshold, interval, provenance, and real supplied values. |
+| D2-03 | Complete for D-008 | Feature-leakage audit, earlier analogs/fallback, and validation comparison for the reduced candidate; original full physical model deferred. |
+| D2-04 | Complete | Feature set/hyperparameters frozen before test, validation-only sigmoid calibration, and honest score evidence/metrics. |
+| D2-05 | Complete — blocking gate | Dataset → prediction → API → map → explanation → test-panel smoke and recorded offline verification; `e2e-v1` sign-off recorded. |
+| D3-01 | Open | Five explanations audited; trust-panel test values match the evaluation artifact or a pending notice. |
+| D3-02 | Open | Three-minute video cut; every result/caption reconciled with frozen evidence. |
+| D3-03 | Open | Provenance/licensing package; fresh clone plus generated release assets runs on a second machine with working links and visible scope. |
+| D3-04 | Open | Reviewed changes merged and release/assets tagged `submission-freeze`, with no unverified feature or metric. |
+| D3-05 | Open | Final deck/video links opened on a second device, rehearsal/export blockers resolved, submission receipt saved. |
 
 The formal first three phases are recorded as complete; the trust/demo/submission phase remains open. The plan's 27–29 September timetable was a planning assumption, not verified evidence of an official portal deadline. Its role placeholders are historical accountability assignments, not proof that each named person performed every task.
 
-Older “blocked” or “recording pending” paragraphs remain in the chronological records. This overview uses later completion entries where available rather than treating all historical status statements as simultaneous.
+Older “blocked” or “recording pending” paragraphs remain recoverable in Git history. This overview uses later completion entries where available rather than treating all historical status statements as simultaneous.
 
 ## 14. Quality, reproducibility, and release
 
@@ -482,7 +560,15 @@ The lasting release requirements are:
 - **Distribution:** current provider terms and third-party asset attribution checked; no raw archives, credentials, virtual environments, or large recordings committed.
 - **Acceptance:** final release/assets frozen, presentation/video links opened on another device, and submission receipt retained when applicable.
 
-The source manifest and dated run log preserve what was actually attempted and produced. Source, threshold, time-window, split, grid, or feature changes are recorded as decisions rather than silently changing the meaning of existing results. Missing dates are not filled with fabricated forecasts; an incomplete gate remains blocked with a labeled fixture/pilot fallback.
+The source manifest and historical run records preserve what was actually attempted and produced. Source, threshold, time-window, split, grid, or feature changes are recorded as decisions rather than silently changing the meaning of existing results. Missing dates are not filled with fabricated forecasts; an incomplete gate remains blocked with a labeled fixture/pilot fallback.
+
+### Continuing the evidence record
+
+With the separate Markdown records consolidated, future material decisions belong in this document's decision history and results belong alongside their dated artifact identities. A reproducibility entry records the actual command, code state, manifest/hash, split, seed, output location, observed outcome, remaining limitation, and acceptance ticket. Source-object evidence remains in `DATA_MANIFEST.csv`; absence is not proof of either success or failure.
+
+The inherited status vocabulary is **✅ Complete** for evidenced acceptance, **⚠️ Blocked — needs human** for missing dependencies/evidence with an explicit fallback, and **❌ Failed** for a real unsuccessful attempt. Writing a plan or compiling this document does not satisfy a gate. Raw metadata, GRIB values, file contents, checksums, or command output are never invented; cited historical evidence is distinguished from a newly executed check.
+
+If leakage or invalid timing is discovered, affected rows, metrics, and presentation claims must be invalidated and rebuilt from permitted data. If a source becomes unavailable, a different forecast/reference is a documented research change, not an invisible download fallback. Small reviewed changes preserve schema and artifact compatibility, while `.gitignore` protects raw data and secrets.
 
 These principles remain relevant beyond the hackathon. They support comparing future versions without losing the meaning of the first result.
 
@@ -525,6 +611,18 @@ A live service additionally needs a verified current-model bridge, data-availabi
 | Dense spatial/deep models | Additional data, compute, leakage checks, and demonstrable value beyond the regional baseline. |
 
 Monsoon depressions, western disturbances, active/break regimes, and rainfall displacement motivate potential features. They remain physical hypotheses unless supported by actual fields and analysis; current score contributions do not establish those mechanisms.
+
+The original research translates these hypotheses into specific tests: moisture inflow, low-level wind/vorticity, and pressure minima for monsoon systems; height gradients, upper-level wind, and terrain context for western disturbances; and issue-time rain anomalies/regime descriptors for active/break conditions. Temperature/ridge/soil-moisture signals belong to a separate heat task, and cyclone steering/track/intensity signals require storm-specific verification. None is a license to introduce later observed regime labels into issue-time features.
+
+### Research choices retained for future work
+
+- **Source access is an empirical gate:** a public catalogue proves a product is described, not that every required date/field is retrievable. GEFS and IMD moved from pilot-dependent feasibility to the specific completed c00 corpus; other sources still require retrieval pilots.
+- **Archive identity matters:** recent GFS/ECMWF feeds, historical GEFS reforecasts, and TIGGE are distinct products. The project's research found rolling-feed retention unsuitable as the sole multiyear training route; exact current retention must be checked before future acquisition.
+- **Grids and ensembles are product-specific:** the reference describes coarser GEFS upper-level fields, heterogeneous TIGGE grids, and different NCMRWF archived versus operational member configurations. A future adapter must discover its actual configuration rather than assuming one universal grid or member count.
+- **Direct analogs precede latent embeddings:** interpretable dates and measured errors were preferred to an autoencoder similarity score without verified added value. Learned embeddings and dense spatial models remain research options, not prerequisites for a map.
+- **Probability guarantees require their own theory and evidence:** neither class weighting nor conformal terminology establishes that 90% of high-risk flags will be busts. No such guarantee is part of this prototype.
+
+The early research synthesis separated checked source facts, draft hypotheses, unverified assertions, and design choices. That distinction survives here as recorded evidence versus intended capability; unverified disaster anecdotes, unrestricted archive-access claims, and claims of no prior competing work are not adopted as facts.
 
 ## 16. Limitations and open questions
 
@@ -569,20 +667,38 @@ These sources support the data and methodological background, not Synoptiq's mea
 - SHAP: [TreeExplainer documentation](https://shap.readthedocs.io/en/latest/generated/shap.TreeExplainer.html).
 - Transfer context: [NCMRWF system descriptions](https://nwp.ncmrwf.gov.in/HomePage/index.php) and [TIGGE archive overview](https://ecds.ecmwf.int/datasets/tigge-forecasts?tab=overview).
 
+Additional sources retained for the research extensions and source-selection rationale:
+
+| Topic | Source and role |
+| --- | --- |
+| IMD file alternative | [Official binary rainfall specification](https://imdpune.gov.in/cmpg/Griddata/Rainfall_25_Bin.html); alternative encoding still needs a decode/time audit. |
+| GEFS relevance in India | [GEFSv12 monsoon evaluation](https://journals.ametsoc.org/view/journals/wefo/37/7/WAF-D-21-0184.1.xml); prior research, not Synoptiq validation. |
+| Spatial rain verification | NCMRWF [2018 CRA report](https://www.ncmrwf.gov.in/Reports-eng/MoES_MFV_CRA_Monsoon2018.pdf) and [2024 verification report](https://www.ncmrwf.gov.in/Reports-eng/NCUMG_MAM2024.pdf). |
+| Institutional model configuration | [NCUM technical description](https://www.ncmrwf.gov.in/ncmrwf/NCUM-Writeup.pdf) and [implementation report](https://www.ncmrwf.gov.in/Reports-eng/New_NCUM-Implementation_Report.pdf); configurations are time-specific. |
+| TIGGE access and identity | [Provider licence](https://cds.climate.copernicus.eu/licences/tigge-licence) and [contributing-model table](https://confluence.ecmwf.int/spaces/TIGGE/pages/40109876/Models); centre-specific restrictions and archived configurations. |
+| ERA5 context | [Single-level catalogue](https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels?tab=overview), [pressure-level catalogue](https://cds.climate.copernicus.eu/datasets/reanalysis-era5-pressure-levels?tab=overview), and [CDS API setup](https://cds.climate.copernicus.eu/how-to-api). |
+| IMDAA context | [NCMRWF overview](https://nwp.ncmrwf.gov.in/reanalysis), [Rani et al. study](https://journals.ametsoc.org/view/journals/clim/34/12/JCLI-D-20-0412.1.xml), and [access registration](https://rds.ncmrwf.gov.in/register); portal and paper periods differ, so actual coverage needs checking. |
+| Separate heat task | [IMD Tmax catalogue](https://imdpune.gov.in/cmpg/Griddata/Max_1_Bin.html) and [IMD criteria material](https://mausam.imd.gov.in/met-oly/Met-Olympiad-Study-Material-Senior.pdf). |
+| Separate cyclone task | [IMD RSMC best-track archive](https://rsmcnewdelhi.imd.gov.in/report.php?internal_menu=MzM). |
+| Alternative precipitation reference | NASA [IMERG products](https://gpm.nasa.gov/data/imerg) and [product FAQ](https://gpm.nasa.gov/data/faq); product/latency selection matters. |
+| Recent versus historical forecasts | [ECMWF open data](https://www.ecmwf.int/en/forecasts/datasets/open-data) and [NOAA GFS archive/access table](https://www.ncei.noaa.gov/products/weather-climate-models/global-forecast); neither is the chosen GEFS reforecast corpus. |
+
+The earlier literature notes also listed IndiaWeatherBench, BharatBench, GraphCast, Pangu-Weather, and GenCast as adjacent benchmarking/forecast-generation work. No comparative performance or originality claim was established from those mentions; a future related-work study should verify the actual versions and task definitions before comparing them with forecast-error detection.
+
 ### Underlying project history
 
-This is the single reader-facing synthesis. Original files remain available for detailed evidence and historical traceability, not as additional required reading:
+This is the maintained, reader-facing project document. The separate Markdown sources were consolidated and removed at the owner's request. Their original wording and dated execution detail remain recoverable from the [pre-consolidation documentation snapshot](https://github.com/kan9667/synoptiq/tree/deadd86e18581b85ab61b388e1456a1f0f16ef7d/docs). The renamed `Canonical-Reference.md` was byte-identical to the older long-named canonical reference in that snapshot.
 
-| Record | Contribution to this reference |
+| Former record | Consolidated home |
 | --- | --- |
-| [Canonical research reference](SIH-26079-Forecast-Bust-Detection-Canonical-Reference.md) | Problem, source selection, alternatives, full architecture, prior literature, risks, and future scope. |
-| [72-hour implementation plan](SIH-26079-72-Hour-Implementation-Plan.md) | Original dependencies, schema, milestones, acceptance gates, and submission design. |
-| [Decisions](DECISIONS.md) | Approved time, grid, observation-boundary, reduced-candidate, and display choices. |
-| [Data audit](data_audit.md) | Real decoding, accumulation/region hand checks, provenance corrections, and completed-corpus sign-off. |
-| [Method](method.md) and [results](results.md) | Statistical protocol and recorded baseline/candidate/replay evidence. |
-| [Run log](RUN_LOG.md) | Dated commands, outcomes, later verifications, and progress history. |
-| [Historical agent contract and roadmap](AGENTS.md) | Original collaboration safeguards and recorded ticket status. |
-| [Release checklist](release_checklist.md) | Packaging, attribution, second-machine, and submission requirements. |
-| [Earlier complete handoff](SYNOPTIQ_COMPLETE_HANDOFF.md) | Detailed saved-artifact summary, worked example, product inventory, and communication context. |
+| Canonical research reference | §§1–8, 15–16, 18: purpose, sources, architecture, research alternatives, risks, future scope, and bibliography. |
+| 72-hour implementation plan | §§11–15: contracts, repository, dependencies, milestones, acceptance, and release. |
+| Decisions | §13: dated D-001–D-010 history; scientific details in §§4–8. |
+| Data audit | §§5–6: signed timing interpretation, real arithmetic, source identities, region checks, build safeguards, and completion evidence. |
+| Method and results | §§4, 8–10: label/model protocol, calibrated and uncalibrated results, artifact identities, and worked example. |
+| Run log | §§6, 9, 13–14: key execution outcomes, milestone status, reproducibility, and ongoing record format; full command history in Git. |
+| Agent contract and roadmap | §§11–14: schema, quality safeguards, exact ticket identities, and evidence-led completion; agent-session instructions are not the reader-facing format. |
+| Release checklist | §14: attribution, fresh-clone/second-machine verification, matching assets, and submission acceptance. |
+| Earlier complete handoff | §§3, 9–12, 15–17: state, result identity, product/example, local use, future work, and team. |
 
 As Synoptiq develops, this reference can evolve with it: retain dated result identities, explain material design changes, and keep implemented capabilities distinct from research proposals. The project's durable core is not a particular dashboard or model version—it is a reproducible answer to a clearly defined forecast-reliability question.

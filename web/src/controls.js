@@ -7,12 +7,22 @@
 import { escapeHtml } from "./format.js";
 import { renderLegend } from "./legend.js";
 
+const FEATURED_CASE = {
+  init: "2019-12-31",
+  lead: 6,
+  regionId: "R28N-094E",
+};
+
 /**
  * Initializes and binds the control dock.
  * @param {HTMLElement} container
  * @param {object} options
  */
-export function setupControls(container, { inits, selectedInit, selectedLead, onInitChange, onLeadChange, onOpenCorpusInfo, onOpenFeatureArch }) {
+export function setupControls(
+  container,
+  { inits, selectedInit, selectedLead, onInitChange, onLeadChange, onOpenCorpusInfo, onOpenFeatureArch, onOpenFeaturedCase }
+) {
+  const featuredCaseAvailable = inits.includes(FEATURED_CASE.init);
   container.innerHTML = `
     <div class="dock-section">
       <div class="dock-title-row">
@@ -37,6 +47,11 @@ export function setupControls(container, { inits, selectedInit, selectedLead, on
           <span class="corpus-tag">3 Benchmark Dates</span>
           <button type="button" class="btn-corpus-info font-mono" id="btn-open-corpus-info" title="View 10-Year historical corpus split architecture">10-Yr Corpus Info ℹ️</button>
         </div>
+        ${featuredCaseAvailable ? `
+          <button type="button" class="btn-featured-case" id="btn-open-featured-case" title="Open the documented held-out replay case R28N-094E on 2019-12-31, Day 6">
+            <span class="featured-case-kicker">FEATURED HELD-OUT CASE</span>
+            <span class="featured-case-value font-mono">2019-12-31 · R28N-094E · D6</span>
+          </button>` : ""}
       </div>
 
       <div class="control-group">
@@ -70,9 +85,9 @@ export function setupControls(container, { inits, selectedInit, selectedLead, on
             .join("")}
         </div>
         <div class="lead-policy-card">
-          <span class="policy-icon">⚠️</span>
+          <span class="policy-icon">◌</span>
           <div class="policy-body">
-            <strong>Day 10 Policy:</strong> Probabilities exist strictly for <strong>Day 1–9</strong>. Day 10 remains gray/unavailable because the exact +240–+243h accumulation interval is not evidenced in the archive.
+            <strong>Day 10:</strong> unavailable until an exact +240–+243h accumulation interval is evidenced. Day 1–9 remain independently scored.
           </div>
         </div>
       </div>
@@ -165,6 +180,11 @@ export function setupControls(container, { inits, selectedInit, selectedLead, on
     archBtn.addEventListener("click", onOpenFeatureArch);
   }
 
+  const featuredCaseBtn = container.querySelector("#btn-open-featured-case");
+  if (featuredCaseBtn && onOpenFeaturedCase) {
+    featuredCaseBtn.addEventListener("click", () => onOpenFeaturedCase(FEATURED_CASE));
+  }
+
   return {
     updateSelectedLead(lead) {
       const display = container.querySelector("#lead-active-display");
@@ -186,6 +206,9 @@ export function setupControls(container, { inits, selectedInit, selectedLead, on
           )
           .join("");
       }
+    },
+    updateSelectedInit(init) {
+      if (selectInit) selectInit.value = init;
     },
     updateProvenance({ model, truth_source, window_quality, window_text, data_mode, lead }) {
       const specModel = container.querySelector("#spec-model");
@@ -217,9 +240,9 @@ export function setupControls(container, { inits, selectedInit, selectedLead, on
         }
       }
     },
-    updateLegend(mode, dataMode = "fixture") {
+    updateLegend(mode, dataMode = "fixture", tierCounts = null) {
       const legendContainer = container.querySelector("#dock-legend-container");
-      if (legendContainer) renderLegend(legendContainer, mode, dataMode);
+      if (legendContainer) renderLegend(legendContainer, mode, dataMode, tierCounts);
     },
   };
 }

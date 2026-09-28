@@ -91,7 +91,7 @@ export function getTierStroke(tier) {
  * @param {HTMLElement} container
  * @param {string} mode - 'bust' | 'forecast' | 'coverage'
  */
-export function renderLegend(container, mode = "bust", dataMode = "fixture") {
+export function renderLegend(container, mode = "bust", dataMode = "fixture", tierCounts = null) {
   if (mode === "coverage") {
     const items = [
       { key: "full", ...COVERAGE_PALETTE.full },
@@ -188,14 +188,21 @@ export function renderLegend(container, mode = "bust", dataMode = "fixture") {
     <div class="legend-items">
       ${tiers
         .map(
-          (t) => `
+          (t) => {
+            const count = tierCounts?.[t.key];
+            const countHtml = count !== undefined && count !== null
+              ? `<span class="legend-count">${count}</span>`
+              : "";
+            return `
         <div class="legend-row tier-${t.key}" title="${t.description}">
           <span class="legend-swatch" style="background-color: ${t.fill}; border-color: ${t.stroke};"></span>
           <div class="legend-meta">
             <span class="legend-label">${t.label}</span>
+            ${countHtml}
           </div>
         </div>
-      `
+      `;
+          }
         )
         .join("")}
     </div>

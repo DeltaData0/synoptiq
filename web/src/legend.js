@@ -91,7 +91,7 @@ export function getTierStroke(tier) {
  * @param {HTMLElement} container
  * @param {string} mode - 'bust' | 'forecast' | 'coverage'
  */
-export function renderLegend(container, mode = "bust") {
+export function renderLegend(container, mode = "bust", dataMode = "fixture") {
   if (mode === "coverage") {
     const items = [
       { key: "full", ...COVERAGE_PALETTE.full },
@@ -125,6 +125,33 @@ export function renderLegend(container, mode = "bust") {
   }
 
   if (mode === "forecast") {
+    if (dataMode === "historical_replay") {
+      const items = [
+        { key: "heavy", ...FORECAST_PALETTE.heavy },
+        { key: "moderate", ...FORECAST_PALETTE.moderate },
+        { key: "light", ...FORECAST_PALETTE.light },
+        { key: "no_data", ...FORECAST_PALETTE.no_data },
+      ];
+      container.innerHTML = `
+        <div class="legend-header">
+          <span class="legend-title">CONTROL FORECAST RAIN</span>
+          <span class="legend-sub">HISTORICAL REPLAY</span>
+        </div>
+        <div class="legend-items">
+          ${items
+            .map(
+              (item) => `
+          <div class="legend-row" title="${item.description}">
+            <span class="legend-swatch" style="background-color: ${item.fill}; border-color: ${item.stroke};"></span>
+            <div class="legend-meta"><span class="legend-label">${item.label}</span></div>
+          </div>`
+            )
+            .join("")}
+        </div>
+        <div class="legend-caption">Actual c00 control-forecast total for the displayed 24-hour replay window; no-data cells remain neutral.</div>
+      `;
+      return;
+    }
     container.innerHTML = `
       <div class="legend-header">
         <span class="legend-title">FORECAST RAINFALL</span>

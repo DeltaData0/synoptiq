@@ -39,10 +39,11 @@ def test_season_mapping() -> None:
 
     # Must reject naive datetime
     with pytest.raises(ValueError, match="timezone-aware UTC"):
-        get_season(datetime(2018, 7, 1, 3, 0))
+        get_season(datetime(2018, 7, 1, 3, 0))  # noqa: DTZ001
 
     # Must reject non-zero offset timezone
-    from datetime import timezone, timedelta
+    from datetime import timedelta, timezone
+
     ist = timezone(timedelta(hours=5, minutes=30))
     with pytest.raises(ValueError, match="UTC offset of exactly zero"):
         get_season(datetime(2018, 7, 1, 8, 30, tzinfo=ist))

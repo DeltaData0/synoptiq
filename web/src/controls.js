@@ -171,11 +171,9 @@ export function setupControls(container, { inits, selectedInit, selectedLead, on
         }
       }
     },
-    updateLegend(mode) {
+    updateLegend(mode, dataMode = "fixture") {
       const legendContainer = container.querySelector("#dock-legend-container");
-      if (legendContainer) {
-        renderLegend(legendContainer, mode);
-      }
+      if (legendContainer) renderLegend(legendContainer, mode, dataMode);
     },
   };
 }

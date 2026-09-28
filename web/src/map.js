@@ -337,7 +337,7 @@ export function createMap(containerElement, onSelectRegion, onModeChange) {
 
     // Notify legend to update
     if (onModeChange) {
-      onModeChange(mode);
+        onModeChange(mode, cachedPayload?.data_mode || "fixture");
     }
 
     // Re-render layer
@@ -447,12 +447,16 @@ export function createMap(containerElement, onSelectRegion, onModeChange) {
 
     if (hudLead) hudLead.textContent = `Lead Day ${activeLead}`;
     if (hudSummary) {
-      const scored = features.filter((feature) => Number.isFinite(Number(feature.properties?.p_bust))).length;
+      // Do not coerce null with Number(null): JavaScript turns it into zero and
+      // would falsely count no-data regions as scored.
+      const scored = features.filter(
+        (feature) => typeof feature.properties?.p_bust === "number" && Number.isFinite(feature.properties.p_bust)
+      ).length;
       const high = features.filter((feature) => feature.properties?.tier === "high").length;
       const unavailable = features.filter(
         (feature) => feature.properties?.tier === "no_data" || feature.properties?.window_quality === "unavailable"
       ).length;
-      hudSummary.textContent = `${scored} scored · ${high} high · ${unavailable} unavailable`;
+      hudSummary.textContent = `${features.length} regions · ${scored} scored · ${high} high · ${unavailable} unavailable`;
     }
     if (hudWindow) {
       if (firstFeature?.valid_start_utc && firstFeature?.valid_end_utc) {
@@ -551,7 +555,7 @@ export function createMap(containerElement, onSelectRegion, onModeChange) {
           ? `<div class="map-tooltip-reason">⚠️ ${escapeHtml(p.no_data_reason)}</div>`
           : "";
 
-        const probPct = p.p_bust !== null && p.p_bust !== undefined ? Math.round(p.p_bust * 100) : 0;
+        const probPct = Number.isFinite(Number(p.p_bust)) ? Number(p.p_bust) * 100 : 0;
         const meterHtml = p.p_bust !== null
           ? `<div class="tooltip-meter-track">
                <div class="tooltip-meter-fill tier-${p.tier}" style="width: ${probPct}%;"></div>
@@ -563,10 +567,13 @@ export function createMap(containerElement, onSelectRegion, onModeChange) {
           : p.window_quality === "unavailable"
           ? "Unavailable"
           : "Interval unavailable";
+        const forecastText = Number.isFinite(Number(p.f_control_mm))
+          ? `${Number(p.f_control_mm).toFixed(1)} mm`
+          : "Forecast total unavailable in fixture";
         const rainStat = currentMode === "forecast"
           ? `<div class="map-tooltip-stat">
                <span class="stat-lbl">Forecast Rain:</span>
-               <span class="stat-val text-muted">Forecast total unavailable in fixture</span>
+               <span class="stat-val ${Number.isFinite(Number(p.f_control_mm)) ? "font-mono" : "text-muted"}">${escapeHtml(forecastText)}</span>
              </div>`
           : `<div class="map-tooltip-stat">
                <span class="stat-lbl">P(bust):</span>

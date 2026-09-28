@@ -158,13 +158,13 @@ Check a task's box only after producing real, verifiable output for it in this s
 - [x] D1-06 — Fixture API/map + provenance (Owner: E+F) — done when: `make smoke` launches and renders a fixture replay offline with visible fixture ribbon. Tag `pilot-gate`. Evidence: verifier ran `make web`, `pytest`, `make smoke`, and inspected the locally served UI: visible fixture ribbon, selectable Day 1 map, stale-data-clearing Day 2 state, and gray/null Day 10 with the audited unavailable reason.
 - [x] D1-07 — First split-aware real `rows.parquet`/threshold summary (Owner: A+B+C) — done when: Counts by year/lead/season and missingness printed; train-only threshold test passes.
 
-### Phase 3: Model, calibration, and real-data integration gate — [ ] Phase complete
+### Phase 3: Model, calibration, and real-data integration gate — [x] Phase complete
 
-- [ ] D2-01 — Climatology and spread-only baseline (Owner: C) — done when: Reproducible predictions and eligible test metrics or explicit insufficient-data status.
-- [ ] D2-02 — Drill-down wired to schema (Owner: E) — done when: Region click and lead curve show threshold, interval, data provenance.
-- [ ] D2-03 — Named fields, earlier analog retrieval, LightGBM candidate (Owner: D+C) — done when: Feature leakage audit, 5 analogs or fallback, validation comparison.
-- [ ] D2-04 — Sigmoid calibrator, score evidence, frozen candidate (Owner: C+D) — done when: Run log locks feature set/hyperparameters before test, metrics generated honestly.
-- [ ] D2-05 — Full real-data vertical slice (Owner: A–F; F accountable) — done when: Dataset → prediction → API → map → explanation → test-panel smoke succeeds, or explicitly labeled fixture/pilot mode. Tag `e2e-v1`.
+- [x] D2-01 — Climatology and spread-only baseline (Owner: C) — done when: Reproducible predictions and eligible test metrics or explicit insufficient-data status.
+- [x] D2-02 — Drill-down wired to schema (Owner: E) — done when: Region click and lead curve show threshold, interval, data provenance. Evidence: `artifacts/replay/reduced_c00_replay.json` is generated from the frozen real candidate; the real replay smoke and API regression test verify a scored region exposes its threshold, UTC interval, source key, GRIB steps, reasons, and five earlier analogs, while the browser dashboard renders its independently supplied lead data without client interpolation.
+- [x] D2-03 — Named fields, earlier analog retrieval, LightGBM candidate (Owner: D+C) — done when: Feature leakage audit, 5 analogs or fallback, validation comparison.
+- [x] D2-04 — Sigmoid calibrator, score evidence, frozen candidate (Owner: C+D) — done when: Run log locks feature set/hyperparameters before test, metrics generated honestly.
+- [x] D2-05 — Full real-data vertical slice (Owner: A–F; F accountable) — done when: Dataset → prediction → API → map → explanation → test-panel smoke succeeds, or explicitly labeled fixture/pilot mode. Tag `e2e-v1`. Evidence: the guarded real historical replay (`2018-01-01`, `2019-01-01`, `2019-12-31`) passed `make replay-smoke`; real API/browser verification confirmed model score, exact UTC interval, source key, GRIB arithmetic, saved-model score evidence, earlier-only analogs, and null/gray Day 10. The verifier recorded and checked the offline browser run on 2026-09-28.
 
 ### Phase 4: Trust, demo production, and submission freeze — [ ] Phase complete
 

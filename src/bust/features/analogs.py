@@ -8,9 +8,10 @@ can only come from an initialization strictly earlier than the queried one.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from typing import Any
 
 import pandas as pd
 
@@ -117,6 +118,139 @@ def select_earlier_analogs(
         rejected_not_earlier=rejected_not_earlier,
         message=(
             f"Only {len(analogs)} strictly earlier analogs are available; "
+            "do not pad or fabricate analog evidence."
+        ),
+    )
+
+
+def retrieve_c00_earlier_analogs(
+    query_row: Mapping[str, Any] | pd.Series,
+    candidate_pool: pd.DataFrame,
+    *,
+    limit: int = 5,
+) -> AnalogSelection:
+    """Retrieve strictly earlier c00 forecast analogs for a query forecast.
+
+    Matches same region_id, season, and lead_bucket.
+    Filters candidate analogs to strictly earlier issue time (init_utc < query.init_utc).
+    Ranks using only issue-time c00 forecast similarity:
+        abs(candidate.f_control_mm - query.f_control_mm)
+    with deterministic tie-breaking (init_utc desc, lead_day asc).
+
+    Day 10 or non-exact queries return an explicit 'unavailable' result without analogs.
+    Returns at most `limit` analogs. If fewer than `limit` eligible candidates exist,
+    returns status 'insufficient_earlier_analogs'.
+    """
+    if limit < 1:
+        raise ValueError("Analog selection limit must be at least 1.")
+
+    # Guard: Day 10 remains unavailable and must never receive an analog result
+    query_lead = query_row.get("lead_day") if hasattr(query_row, "get") else query_row["lead_day"]
+    query_window = (
+        query_row.get("window_quality", "exact")
+        if hasattr(query_row, "get")
+        else query_row["window_quality"]
+    )
+    if query_lead == 10 or query_window != "exact":
+        return AnalogSelection(
+            analogs=pd.DataFrame(),
+            status="unavailable",
+            requested_count=limit,
+            rejected_not_earlier=0,
+            message="Day 10 or non-exact forecast cannot receive analog retrieval.",
+        )
+
+    # Validate ranking feature
+    validate_analog_rank_features(["f_control_mm"])
+
+    # Required query fields
+    query_init = query_row["init_utc"]
+    query_timestamp = _require_utc(query_init, name="query.init_utc")
+    query_region = query_row["region_id"]
+    query_season = query_row["season"]
+    query_lead_bucket = query_row["lead_bucket"]
+    query_rain = float(query_row["f_control_mm"])
+
+    if candidate_pool.empty:
+        return AnalogSelection(
+            analogs=pd.DataFrame(),
+            status="insufficient_earlier_analogs",
+            requested_count=limit,
+            rejected_not_earlier=0,
+            message="Only 0 strictly earlier analogs are available; do not pad or fabricate analog evidence.",
+        )
+
+    required_pool_cols = {"init_utc", "region_id", "season", "lead_bucket", "f_control_mm"}
+    missing = sorted(required_pool_cols - set(candidate_pool.columns))
+    if missing:
+        raise ValueError(f"Candidate pool is missing required columns: {missing}")
+
+    # Filter to matching region, season, lead_bucket, non-null f_control_mm
+    mask = (
+        candidate_pool["region_id"].eq(query_region)
+        & candidate_pool["season"].eq(query_season)
+        & candidate_pool["lead_bucket"].eq(query_lead_bucket)
+        & candidate_pool["f_control_mm"].notna()
+    )
+    if "lead_day" in candidate_pool.columns:
+        mask = mask & candidate_pool["lead_day"].between(1, 9)
+    if "window_quality" in candidate_pool.columns:
+        mask = mask & candidate_pool["window_quality"].eq("exact")
+
+    matched_candidates = candidate_pool[mask].copy()
+    if matched_candidates.empty:
+        return AnalogSelection(
+            analogs=pd.DataFrame(),
+            status="insufficient_earlier_analogs",
+            requested_count=limit,
+            rejected_not_earlier=0,
+            message="Only 0 strictly earlier analogs are available; do not pad or fabricate analog evidence.",
+        )
+
+    # Temporal filtering: candidate.init_utc < query.init_utc
+    candidate_ts = pd.to_datetime(matched_candidates["init_utc"], utc=True)
+    earlier_mask = candidate_ts < query_timestamp
+    rejected_not_earlier = int((~earlier_mask).sum())
+
+    eligible = matched_candidates[earlier_mask].copy()
+    if eligible.empty:
+        return AnalogSelection(
+            analogs=pd.DataFrame(),
+            status="insufficient_earlier_analogs",
+            requested_count=limit,
+            rejected_not_earlier=rejected_not_earlier,
+            message="Only 0 strictly earlier analogs are available; do not pad or fabricate analog evidence.",
+        )
+
+    # Compute issue-time forecast similarity
+    eligible["forecast_diff"] = (eligible["f_control_mm"].astype(float) - query_rain).abs()
+    eligible["_parsed_init_utc"] = candidate_ts[earlier_mask]
+
+    # Deterministic sorting: forecast_diff asc, init_utc desc, lead_day asc
+    sort_cols = ["forecast_diff", "_parsed_init_utc"]
+    sort_asc = [True, False]
+    if "lead_day" in eligible.columns:
+        sort_cols.append("lead_day")
+        sort_asc.append(True)
+
+    sorted_eligible = eligible.sort_values(by=sort_cols, ascending=sort_asc)
+    selected = sorted_eligible.head(limit).drop(columns=["_parsed_init_utc"])
+
+    if len(selected) == limit:
+        return AnalogSelection(
+            analogs=selected,
+            status="complete",
+            requested_count=limit,
+            rejected_not_earlier=rejected_not_earlier,
+            message=f"Selected {limit} strictly earlier analogs from c00 forecast similarity.",
+        )
+    return AnalogSelection(
+        analogs=selected,
+        status="insufficient_earlier_analogs",
+        requested_count=limit,
+        rejected_not_earlier=rejected_not_earlier,
+        message=(
+            f"Only {len(selected)} strictly earlier analogs are available; "
             "do not pad or fabricate analog evidence."
         ),
     )

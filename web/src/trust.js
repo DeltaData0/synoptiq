@@ -18,6 +18,25 @@ function renderMetrics(metrics) {
     return `<span class="trust-metrics-none font-mono">Metrics pending validated held-out evaluation</span>`;
   }
 
+  // The frozen real replay bundles candidate and baseline metrics separately.
+  // Flatten only supplied numeric values; do not derive a skill score in the UI.
+  if (metrics.candidate && metrics.climatology) {
+    const comparison = [
+      ["Candidate Brier", metrics.candidate.brier_score],
+      ["Climatology Brier", metrics.climatology.brier_score],
+      ["Candidate − climatology", metrics.brier_score_delta],
+      ["Uncalibrated Brier", metrics.candidate.uncalibrated_brier_score],
+    ].filter(([, value]) => typeof value === "number" && Number.isFinite(value));
+    return `<div class="metric-grid">${comparison
+      .map(
+        ([label, value]) =>
+          `<span class="metric-card"><small>${escapeHtml(label)}</small><strong class="font-mono">${escapeHtml(
+            value.toFixed(3)
+          )}</strong></span>`
+      )
+      .join("")}</div>`;
+  }
+
   return `<div class="metric-grid">${Object.entries(metrics)
     .slice(0, 4)
     .map(([key, value]) => {

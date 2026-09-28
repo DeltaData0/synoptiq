@@ -9,7 +9,7 @@ lead_buckets:
   - [8, 10]
 time_window:
   status: audited_source_grounded_inference
-  description: "For IMD NetCDF date label D, use [D - 1 day 03:00Z, D 03:00Z); see signed D1-04 audit in docs/data_audit.md."
+  description: "For IMD NetCDF date label D, use [D - 1 day 03:00Z, D 03:00Z); see signed D1-04 audit in docs/SYNOPTIQ.md, section 5."
   lead_day_formula: "For 00 UTC GEFS init and lead L, [init + (24L-21)h, init + (24L+3)h)."
   exact_lead_days: [1, 2, 3, 4, 5, 6, 7, 8, 9]
   day_10: unavailable

@@ -439,11 +439,22 @@ Pipeline targets print their input manifest ID, git commit, split, seed, and out
 
 The full acquisition uses a resumable streaming pipeline (`scripts/acquire_streaming_dataset.py`). It processed about 98 GB of GEFS archive data within an 8 GiB working-disk budget. Each raw file is checksum-verified, decoded into a validated shard, and then deleted. Progress is tracked in SQLite so interrupted runs resume safely.
 
+- Do not commit raw datasets, credentials, or absolute data paths.
+- Use `DATA_DIR` to point at local data storage (defaults to `data/`).
+- The frozen target is regional 24-hour rain error, with train-only thresholds and explicit UTC verification windows.
+- Day 10 is unavailable: the audited target requires a +240–+243-hour amount,
+  while the inspected archive supplies +240–+246 hours. See
+  [the timing audit](docs/SYNOPTIQ.md#5-time-alignment-and-spatial-coverage); do not present a Day-10 value as
+  exact without a new approved audit.
+- See the [decision history](docs/SYNOPTIQ.md#13-development-history-and-completion-status), [DATA_MANIFEST.csv](DATA_MANIFEST.csv), and [reproducibility record](docs/SYNOPTIQ.md#14-quality-reproducibility-and-release) for change control.
+
 ### Run tests
 ```bash
 make test     # unit, leakage, time-window, model and API tests
 make lint     # Ruff
 ```
+
+`src/bust/` contains the data, feature, model, and API packages. `data/fixtures/` is the only committed data directory. Research, decisions, audit evidence, results, and the implementation roadmap are consolidated in [docs/SYNOPTIQ.md](docs/SYNOPTIQ.md); the original documents remain recoverable from Git history.
 
 ---
 

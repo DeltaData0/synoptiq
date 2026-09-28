@@ -253,15 +253,13 @@ The spread-only baseline and these feature groups are evaluated once that corpus
 
 ### Design choices
 
-| Alternative | Decision | Reason |
-| --- | --- | --- |
-| U-Net pixel segmentation | Not used | Needs far more independent events and storage, makes leakage hard to audit, and gives weak local explanations. The map comes from regional predictions instead. |
-| Autoencoder latent analogs | Not used | Real dates and real errors are more inspectable than a latent similarity score. |
-| Conformal "90% of flags are busts" guarantee | Not claimed | That guarantee does not follow from conformal coverage in general. |
-| Recent GFS/ECMWF open feeds as training data | Not used | They keep only days to weeks of runs. GEFSv12 reforecasts give a consistent multi-year archive. |
-| Boosted tree + direct analog retrieval | **Chosen** | Trains on a laptop from tabular rows, supports named features, time-block testing and practical calibration. |
+**Start here:** [Synoptiq — Project Reference](docs/SYNOPTIQ.md) brings together the problem, scientific method, architecture, recorded results, current capabilities, development history, and future roadmap in one document.
 
----
+## Current status
+
+The recorded real-data MVP uses a **reduced c00-only LightGBM candidate**, with a completed 2010–2019 forecast corpus, held-out evaluation, and a three-date historical replay. Exact Days 1–9 are supported; Day 10 and low-coverage regions remain no-data. Full ensemble/atmospheric features and final release acceptance remain outstanding; see the [project reference](docs/SYNOPTIQ.md#3-current-implementation) for scope and evidence.
+
+A fresh clone still runs in **fixture mode** by default. Real generated artifacts are Git-ignored and must be supplied separately; the [real-replay startup instructions](docs/SYNOPTIQ.md#12-repository-and-local-operation) explain how to select them. Fixture values are not model results.
 
 ## 9. Data Sources
 

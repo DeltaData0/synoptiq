@@ -16,21 +16,33 @@ const REASON_GROUPS = [
     label: "Ensemble Disagreement",
     icon: "📊",
     status: "roadmap",
-    deferredMsg: "Ensemble member perturbation spread (p01–p04 std dev) is not in the current corpus. Ensemble spread explanation deferred to Phase 4.",
+    deferredMsg: "When ingested, p01–p04 regional rainfall will provide ensemble range and spread signals.",
+    previewRows: [
+      ["Member rain range", "12.4–29.8 mm"],
+      ["Spread (σ)", "6.3 mm"],
+    ],
   },
   {
     key: "moisture",
     label: "Atmospheric Moisture",
     icon: "💧",
     status: "roadmap",
-    deferredMsg: "850 hPa specific humidity (q850) and precipitable water are not in the trained candidate model. Multi-level soundings deferred to Phase 4.",
+    deferredMsg: "When ingested, regional humidity and precipitable-water fields will become issue-time model inputs.",
+    previewRows: [
+      ["q850", "11.8 g kg⁻¹"],
+      ["Precipitable water", "42 mm"],
+    ],
   },
   {
     key: "circulation",
     label: "Circulation & Dynamics",
     icon: "🌀",
     status: "roadmap",
-    deferredMsg: "10m wind fields (u, v), surface pressure (mslp), and 500 hPa geopotential height are deferred to Phase 4 multi-level ingestion.",
+    deferredMsg: "When ingested, wind, pressure, and geopotential fields will describe the regional circulation state at issue time.",
+    previewRows: [
+      ["10 m wind", "9.6 m s⁻¹ SE"],
+      ["Surface pressure", "1002 hPa"],
+    ],
   },
   { key: "analog_error_memory", label: "Analog-Error Memory", icon: "🧠", status: "active" },
 ];
@@ -49,6 +61,14 @@ function formatProvenance(value) {
       .join("; ");
   }
   return "Not supplied";
+}
+
+function formatScoreContribution(reason) {
+  // Replay assets record the saved LightGBM contribution in the evidence
+  // caption. Feature `value` is deliberately the input value (when numeric),
+  // not the contribution itself.
+  const match = String(reason?.caption || "").match(/score contribution\s+([+-]?\d+(?:\.\d+)?)/i);
+  return match ? Number(match[1]).toFixed(4) : "Not supplied";
 }
 
 function renderLeadTrajectory(leadCurve, activeLead) {
@@ -75,18 +95,18 @@ function renderLeadTrajectory(leadCurve, activeLead) {
     <div class="trajectory-scale" aria-hidden="true"><span>100%</span><span>0%</span></div>
     <div class="trajectory-chart" role="group" aria-label="Supplied forecast bust probabilities by lead day">
       ${leadCurve
-        .map((point) => {
-          const isAvailable = point.status === "available" && point.p_bust !== null;
-          const isSelected = Number(point.lead) === Number(activeLead);
-          const statusLabel = isAvailable
-            ? `${formatProbability(point.p_bust)} bust probability; threshold ${formatMm(point.threshold_mm)}`
-            : point.status === "unavailable"
+      .map((point) => {
+        const isAvailable = point.status === "available" && point.p_bust !== null;
+        const isSelected = Number(point.lead) === Number(activeLead);
+        const statusLabel = isAvailable
+          ? `${formatProbability(point.p_bust)} bust probability; threshold ${formatMm(point.threshold_mm)}`
+          : point.status === "unavailable"
             ? "Unavailable"
             : point.status === "error"
-            ? "Request failed"
-            : "Not supplied";
-          const barHeight = isAvailable ? Math.max(5, Math.round(point.p_bust * 100)) : 3;
-          return `
+              ? "Request failed"
+              : "Not supplied";
+        const barHeight = isAvailable ? Math.max(5, Math.round(point.p_bust * 100)) : 3;
+        return `
             <button
               type="button"
               class="trajectory-point ${isAvailable ? "trajectory-point-available" : "trajectory-point-unavailable"} ${isSelected ? "trajectory-point-selected" : ""}"
@@ -100,8 +120,8 @@ function renderLeadTrajectory(leadCurve, activeLead) {
               <span class="trajectory-day font-mono">D${escapeHtml(point.lead)}</span>
             </button>
           `;
-        })
-        .join("")}
+      })
+      .join("")}
     </div>
     <p class="trajectory-caption">Bars are direct regional API responses. Missing, failed, and unavailable leads are never estimated by the dashboard.</p>
   `;
@@ -154,9 +174,22 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, lead
             <div class="group-header">
               <span class="group-icon">${grp.icon}</span>
               <span class="group-name">${escapeHtml(grp.label)}</span>
-              <span class="badge-roadmap-tag">ROADMAP WRAPPER</span>
+              <span class="badge-roadmap-tag">ILLUSTRATIVE UI WRAPPER</span>
             </div>
             <p class="group-roadmap-note">${escapeHtml(grp.deferredMsg)}</p>
+
+            <div class="roadmap-preview">
+              ${grp.previewRows
+                .map(
+                  ([label, value]) => `
+                    <div class="roadmap-preview-row">
+                      <span>${escapeHtml(label)} <em>(example)</em></span>
+                      <strong>${escapeHtml(value)}</strong>
+                    </div>`
+                )
+                .join("")}
+            </div>
+            <p class="roadmap-warning">Illustrative UI only — values are not retrieved, model inputs, scores, or contributors to this bust probability.</p>
           </div>
         `;
       }
@@ -182,13 +215,13 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, lead
         </div>
         <div class="reason-items">
           ${matching
-            .map((r) => {
-              const isIncrease = r.direction?.toLowerCase().includes("increase");
-              const dirClass = isIncrease ? "dir-increase" : "dir-decrease";
-              const dirIcon = isIncrease ? "▲" : "▼";
-              const isFixtureLayer = r.evidence_layer === "fixture";
+        .map((r) => {
+          const isIncrease = r.direction?.toLowerCase().includes("increase");
+          const dirClass = isIncrease ? "dir-increase" : "dir-decrease";
+          const dirIcon = isIncrease ? "▲" : "▼";
+          const isFixtureLayer = r.evidence_layer === "fixture";
 
-              return `
+          return `
                 <div class="reason-card">
                   <div class="reason-title-row">
                     <span class="reason-feature font-mono">${escapeHtml(r.feature)}</span>
@@ -197,8 +230,8 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, lead
                     </span>
                   </div>
                   <div class="reason-val-row font-mono">
-                    <span class="val-label">Contribution:</span>
-                    <span class="val-num">${r.value !== null && r.value !== undefined ? escapeHtml(r.value) : "—"}</span>
+                    <span class="val-label">Score contribution:</span>
+                    <span class="val-num">${escapeHtml(formatScoreContribution(r))}</span>
                     <span class="reason-layer-badge">
                       ${isFixtureLayer ? "fixture (illustrative only — no model claim)" : escapeHtml(r.evidence_layer)}
                     </span>
@@ -206,8 +239,8 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, lead
                   <div class="reason-caption">${escapeHtml(r.caption)}</div>
                 </div>
               `;
-            })
-            .join("")}
+        })
+        .join("")}
         </div>
       </div>
     `;
@@ -232,9 +265,8 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, lead
       </div>
 
       <!-- No-data warning banner if reason exists -->
-      ${
-        isDay10
-          ? `
+      ${isDay10
+      ? `
         <div class="inspector-alert alert-nodata alert-day10" role="alert">
           <div class="alert-icon">⚠️</div>
           <div class="alert-body">
@@ -243,8 +275,8 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, lead
           </div>
         </div>
       `
-          : noDataReason
-          ? `
+      : noDataReason
+        ? `
         <div class="inspector-alert alert-nodata" role="alert">
           <div class="alert-icon">⚠️</div>
           <div class="alert-body">
@@ -252,12 +284,11 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, lead
           </div>
         </div>
       `
-          : ""
-      }
+        : ""
+    }
 
-      ${
-        isPeripheral && !isDay10
-          ? `
+      ${isPeripheral && !isDay10
+      ? `
         <div class="inspector-alert alert-peripheral" role="alert">
           <div class="alert-icon">🌐</div>
           <div class="alert-body">
@@ -266,25 +297,23 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, lead
           </div>
         </div>
       `
-          : ""
-      }
+      : ""
+    }
 
-      ${
-        isFallback && !noDataReason && !isDay10
-          ? `
+      ${isFallback && !noDataReason && !isDay10
+      ? `
         <div class="inspector-alert alert-info">
           <div class="alert-icon">ℹ️</div>
           <div class="alert-body">
-            ${
-              detailError && detailError.status !== 404
-                ? `Regional diagnostics could not be loaded: ${escapeHtml(detailError.message)}. Showing only map fields supplied for this selection.`
-                : "Full regional diagnostics are not supplied for this replay selection. Showing the replay fields that are available."
-            }
+            ${detailError && detailError.status !== 404
+        ? `Regional diagnostics could not be loaded: ${escapeHtml(detailError.message)}. Showing only map fields supplied for this selection.`
+        : "Full regional diagnostics are not supplied for this replay selection. Showing the replay fields that are available."
+      }
           </div>
         </div>
       `
-          : ""
-      }
+      : ""
+    }
 
       <!-- Telemetry Grid -->
       <div class="inspector-section">
@@ -305,16 +334,16 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, lead
           <div class="telemetry-cell">
             <span class="t-lbl">Window Semantics</span>
             <span class="t-val font-mono ${windowQuality === "unavailable" ? "val-warning" : windowQuality === "approximate" ? "val-approx" : ""}">${escapeHtml(
-              isDay10
-                ? "Unavailable (+240–+243h not evidenced)"
-                : windowQuality === "exact"
-                ? "Exact"
-                : windowQuality === "approximate"
-                ? "Approximate"
-                : windowQuality === "unavailable"
-                ? "Unavailable"
-                : "Awaiting replay data"
-            )}</span>
+      isDay10
+        ? "Unavailable (+240–+243h not evidenced)"
+        : windowQuality === "exact"
+          ? "Exact"
+          : windowQuality === "approximate"
+            ? "Approximate"
+            : windowQuality === "unavailable"
+              ? "Unavailable"
+              : "Awaiting replay data"
+    )}</span>
           </div>
 
           <div class="telemetry-cell telemetry-cell-wide">
@@ -327,16 +356,15 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, lead
             <span class="t-val font-mono">${escapeHtml(formatCoverage(coverageFraction))}</span>
           </div>
 
-          ${
-            !isDay10 && confidence !== null && confidence !== undefined
-              ? `
+          ${!isDay10 && confidence !== null && confidence !== undefined
+      ? `
             <div class="telemetry-cell">
               <span class="t-lbl">Confidence Margin</span>
               <span class="t-val font-mono">${formatProbability(confidence)}</span>
             </div>
           `
-              : ""
-          }
+      : ""
+    }
         </div>
       </div>
 
@@ -353,18 +381,17 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, lead
           <span class="evidence-tag">Strictly Earlier 2010–2015 Cases</span>
         </div>
         <div class="analog-list">
-          ${
-            analogs.length
-              ? analogs
-                  .map((analog) => {
-                    const analogInit = analog.init_utc || analog.init || "Earlier case";
-                    const analogError = analog.error_mm ?? analog.error ?? null;
-                    const outcome = analog.bust === true ? "Bust" : analog.bust === false ? "No bust" : "Outcome unavailable";
-                    return `<div class="analog-card"><strong class="font-mono">${escapeHtml(analogInit)}</strong><span>${escapeHtml(outcome)}${analogError === null ? "" : ` · ${escapeHtml(formatMm(analogError))} error`}</span></div>`;
-                  })
-                  .join("")
-              : `<div class="empty-evidence">${isDay10 ? "Day 10 has no earlier cases (lead unavailable)." : "No earlier comparable cases were supplied for this replay."}</div>`
-          }
+          ${analogs.length
+      ? analogs
+        .map((analog) => {
+          const analogInit = analog.init_utc || analog.init || "Earlier case";
+          const analogError = analog.error_mm ?? analog.error ?? null;
+          const outcome = analog.bust === true ? "Bust" : analog.bust === false ? "No bust" : "Outcome unavailable";
+          return `<div class="analog-card"><strong class="font-mono">${escapeHtml(analogInit)}</strong><span>${escapeHtml(outcome)}${analogError === null ? "" : ` · ${escapeHtml(formatMm(analogError))} error`}</span></div>`;
+        })
+        .join("")
+      : `<div class="empty-evidence">${isDay10 ? "Day 10 has no earlier cases (lead unavailable)." : "No earlier comparable cases were supplied for this replay."}</div>`
+    }
         </div>
         <p class="analog-footnote">
           Historical memory is retrieved strictly from prior training initializations (2010–2015 c00) to eliminate lookahead leakage. Not an unconstrained 15-year live database.
@@ -378,13 +405,12 @@ export function renderRegion(panel, { regionData, fallbackProperties, lead, lead
           <span class="evidence-tag">LightGBM Attribution</span>
         </div>
         <div class="shap-disclaimer">
-          ${
-            isFixtureEvidence
-              ? "⚠️ Illustrative fixture example only: this reason payload is an integration test fixture and makes no model or meteorological claim."
-              : isDay10
-              ? "⚠️ Day 10 scoring is unavailable. No diagnostic feature contributions are generated."
-              : "🔬 Feature Attribution (LightGBM Score Evidence): Values reflect saved gradient boosted tree score contributions for active features (Rain, Region, Season, Lead). These represent model sensitivities, NOT proven meteorological causal mechanisms."
-          }
+          ${isFixtureEvidence
+      ? "⚠️ Illustrative fixture example only: this reason payload is an integration test fixture and makes no model or meteorological claim."
+      : isDay10
+        ? "⚠️ Day 10 scoring is unavailable. No diagnostic feature contributions are generated."
+        : "🔬 Feature Attribution (LightGBM Score Evidence): Values reflect saved gradient boosted tree score contributions for active features (Rain, Region, Season, Lead). These represent model sensitivities, NOT proven meteorological causal mechanisms."
+    }
         </div>
         <div class="reasons-accordion">
           ${isDay10 ? '<div class="empty-evidence">No diagnostic signals for unavailable Day 10.</div>' : groupedReasonsHtml}

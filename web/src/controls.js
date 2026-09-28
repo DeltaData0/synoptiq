@@ -78,29 +78,6 @@ export function setupControls(container, { inits, selectedInit, selectedLead, on
       </div>
     </div>
 
-    <!-- Model Feature Architecture Wrapper Section -->
-    <div class="dock-section dock-model-section">
-      <div class="dock-title-row">
-        <span class="dock-eyebrow">MODEL FEATURE ARCHITECTURE</span>
-        <button type="button" class="btn-link-action font-mono" id="btn-open-feature-arch">Roadmap &rarr;</button>
-      </div>
-      <div class="feature-status-summary">
-        <div class="feat-status-block feat-status-active">
-          <div class="feat-status-head">
-            <span class="feat-badge-active">&check; 5 ACTIVE FEATURES (c00)</span>
-          </div>
-          <p class="feat-desc font-mono">f_control_mm &bull; region &bull; season &bull; lead_day &bull; bucket</p>
-        </div>
-
-        <div class="feat-status-block feat-status-deferred">
-          <div class="feat-status-head">
-            <span class="feat-badge-deferred">&hourglass; ROADMAP / DEFERRED</span>
-          </div>
-          <p class="feat-desc">Ensemble spread (p01–p04), q850 moisture, pressure, and wind vectors are deferred to Phase 4 multi-level ingestion.</p>
-        </div>
-      </div>
-    </div>
-
     <div class="dock-section dock-legend-section" id="dock-legend-container"></div>
 
     <div class="dock-section dock-summary-section">
@@ -129,6 +106,30 @@ export function setupControls(container, { inits, selectedInit, selectedLead, on
           <dd class="text-warning">Unavailable (p01–p04 absent)</dd>
         </div>
       </dl>
+    </div>
+
+    <!-- Model feature scope sits at the end of the dock: it is useful context,
+         but never competes with issue-time controls or current-map evidence. -->
+    <div class="dock-section dock-model-section">
+      <div class="dock-title-row">
+        <span class="dock-eyebrow">MODEL FEATURE ARCHITECTURE</span>
+        <button type="button" class="btn-link-action font-mono" id="btn-open-feature-arch">Roadmap &rarr;</button>
+      </div>
+      <div class="feature-status-summary">
+        <div class="feat-status-block feat-status-active">
+          <div class="feat-status-head">
+            <span class="feat-badge-active">&check; 5 ACTIVE FEATURES (c00)</span>
+          </div>
+          <p class="feat-desc font-mono">f_control_mm &bull; region &bull; season &bull; lead_day &bull; bucket</p>
+        </div>
+
+        <div class="feat-status-block feat-status-deferred">
+          <div class="feat-status-head">
+            <span class="feat-badge-deferred">&hourglass; ROADMAP / DEFERRED</span>
+          </div>
+          <p class="feat-desc">Ensemble spread (p01–p04), q850 moisture, pressure, and wind vectors are deferred to Phase 4 multi-level ingestion.</p>
+        </div>
+      </div>
     </div>
   `;
 

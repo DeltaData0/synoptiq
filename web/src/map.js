@@ -573,9 +573,15 @@ export function createMap(containerElement, onSelectRegion, onModeChange) {
       pane: "gridPane",
       style: (feature) => getFeatureStyle(feature, feature.properties.region_id === selectedId),
       onEachFeature: (feature, layer) => {
+        const p = feature.properties || {};
+        const tier = p.tier || "no_data";
+        const TIER_META = { high: { label: "High Risk" }, medium: { label: "Medium Risk" }, low: { label: "Low Risk" }, no_data: { label: "No Data" } };
+        const tierMeta = TIER_META[tier] || TIER_META.no_data;
         const covPct = Math.round(((p.coverage_fraction ?? (p.is_land_supported ? 1.0 : 0)) * 100));
         const isPeripheral = p.is_land_supported === false || (p.coverage_fraction !== null && p.coverage_fraction !== undefined && Number(p.coverage_fraction) < 0.80);
         const isDay10 = Number(cachedLead) === 10;
+        const probText = Number.isFinite(Number(p.p_bust)) ? `${(Number(p.p_bust) * 100).toFixed(2)}%` : "—";
+        const thresholdText = Number.isFinite(Number(p.threshold_mm)) ? `${Number(p.threshold_mm).toFixed(1)} mm` : "—";
 
         const badgeHtml = isDay10
           ? '<span class="map-tooltip-badge tier-no_data">Day 10 Unavailable</span>'

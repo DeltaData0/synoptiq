@@ -3,7 +3,7 @@
 This is a preparation checklist for D3-03 through D3-05. It does not certify a
 release by itself. Check an item only against the final release candidate and
 record the command output, commit, manifest ID, split, seed, and artifact path
-in `RUN_LOG.md`. (Plan §§6, 9; `AGENTS.md`)
+in `RUN_LOG.md`. (Plan §§6, 9; `../AGENTS.md`)
 
 ## Evidence and claims
 

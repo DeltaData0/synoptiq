@@ -36,3 +36,12 @@ artifacts/replay/**
 !artifacts/metrics/.gitkeep
 !artifacts/replay/.gitkeep
 
+# Submission media: keep editable source and small permitted release assets only.
+# Raw recordings belong in external storage; commit a link or a compressed, reviewed
+# release asset only when it is small enough for GitHub.
+demo/*.mp4
+demo/*.mov
+demo/*.webm
+assets/screenshots/*.mp4
+assets/screenshots/*.mov
+assets/screenshots/*.webm

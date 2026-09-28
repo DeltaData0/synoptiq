@@ -8,9 +8,9 @@ Synoptiq is a CPU-first, local research prototype that replays historical GEFSv1
 
 - **Never invent evidence.** Do not invent metadata, GRIB step values, decoded output, object keys, URLs, checksums, file contents, or command output that a real tool call in the current session did not produce. Record only observed GEFS archive keys and IMD selector URLs; never guess key templates. (Plan §2, acquisition gates)
 - **Never fabricate coverage or performance.** Do not fill missing dates with invented forecasts, use a rolling recent feed as historical reforecast data, or present fixture/pilot output as validated-model output. If the corpus or audit is incomplete, label the result `fixture`, `pilot_only`, `insufficient_test_data`, or blocked as applicable. (Plan introduction, §§2–3, §6; Reference §§3–4)
-- **Preserve frozen decisions.** A dataset/source swap, threshold change, split change, time-window change, region-grid change, or feature-policy change requires a dated entry in `DECISIONS.md`; never make a silent edit. (Plan §§1–3, §10; Reference §3)
+- **Preserve frozen decisions.** A dataset/source swap, threshold change, split change, time-window change, region-grid change, or feature-policy change requires a dated entry in `docs/DECISIONS.md`; never make a silent edit. (Plan §§1–3, §10; Reference §3)
 - **Keep restricted material out of Git.** Never commit raw data, credentials, local absolute paths, or large binaries. Check `.gitignore` before staging; stop and call out a potential violation. Commit only fixtures and small, permitted release artifacts with provenance. (Plan §1, §10)
-- **Protect M0 invariants.** Once M0 is signed off, do not silently modify the 2010–15 train / 2016–17 validation / 2018–19 test split or `config/label_policy.yaml`. Flag the conflict and update `DECISIONS.md` before any approved change. Thresholds are train-only regional × season × lead-bucket q90 with a 10 mm/day floor; no random row split. (Plan §3 M0; Reference §3)
+- **Protect M0 invariants.** Once M0 is signed off, do not silently modify the 2010–15 train / 2016–17 validation / 2018–19 test split or `config/label_policy.yaml`. Flag the conflict and update `docs/DECISIONS.md` before any approved change. Thresholds are train-only regional × season × lead-bucket q90 with a 10 mm/day floor; no random row split. (Plan §3 M0; Reference §3)
 - **Treat verification time as first-class data.** `init_utc + lead_day` is not a verification interval. Preserve exact UTC start/end, GRIB accumulation intervals, and `window_quality`; never silently compare 00–00 forecast totals with an unaudited IMD daily window. Day 10 remains gray/unavailable unless the +240/+246-hour gate passes or an explicitly documented approximation is approved. (Plan §§1–2, §5; Reference §3)
 - **Do not overstate explanations.** SHAP is model-score evidence, not a proven meteorological cause. Explanations must name the feature, direction, and evidence layer; analogs must be earlier than the query initialization. (Plan §4; Reference §5)
 
@@ -20,7 +20,7 @@ The paths below are the project layout frozen in Plan §1. “Owner” uses the 
 
 | Path | Contents / contract | Owner / ticket |
 | --- | --- | --- |
-| `README.md`, `DECISIONS.md`, `RUN_LOG.md`, `DATA_MANIFEST.csv`, `.env.example` | Scope, decision log, reproducibility log, source manifest, and local configuration contract. | A + F / D1-01 |
+| `README.md`, `docs/{DECISIONS,RUN_LOG}.md`, `DATA_MANIFEST.csv`, `.env.example` | Scope, decision log, reproducibility log, source manifest, and local configuration contract. | A + F / D1-01 |
 | `pyproject.toml`, `requirements.lock`, `Makefile`, `.gitignore` | Python environment, resolved lock, named run targets, and Git safety boundary. | A + E / D1-01 |
 | `config/regions_2deg.geojson` | Fixed 2° India-land region definition; freeze IDs before training. | B / D1-05 |
 | `config/label_policy.yaml`, `config/splits.yaml` | Frozen label policy and chronological split policy. | B + C / D1-05, D1-07, M0 |
@@ -64,10 +64,10 @@ The related endpoints are fixed as `GET /health`, `GET /v1/region/{region_id}?in
 
 Before changing code or data, read these in order:
 
-1. `RUN_LOG.md`: identify the latest dated run, its exact command, commit, manifest/hash, split/seed, output, outcome, and remaining caveat.
+1. `docs/RUN_LOG.md`: identify the latest dated run, its exact command, commit, manifest/hash, split/seed, output, outcome, and remaining caveat.
 2. `DATA_MANIFEST.csv`: distinguish actual inventoried/downloaded source objects from fixtures; treat an absent field or row as **not attempted**, not as evidence of failure or success.
 3. `docs/data_audit.md`: this is the authoritative status for GEFS decoding, IMD decoding, the IMD-day UTC mapping, coverage, and the Day-10 verdict. A pending audit blocks empirical labels and metrics. (Plan §2; D1-04)
-4. `DECISIONS.md`: check frozen choices and any approved exception before altering source, window, region, threshold, split, or model policy. (Plan §§1–4)
+4. `docs/DECISIONS.md`: check frozen choices and any approved exception before altering source, window, region, threshold, split, or model policy. (Plan §§1–4)
 5. The relevant Plan §9 ticket and its dependencies: tracker status begins `Todo`; use `Blocked` with a link to the blocking audit, and update the next owner at the prescribed check-in. (Plan §9)
 
 ### Status and end-of-turn updates
@@ -78,7 +78,7 @@ Use a dated status line in the artifact you update:
 - `⚠️ Blocked — <ticket/gate>: <specific missing evidence>; <next safe action>` when a dependency, access route, or audit is unresolved.
 - `❌ Failed — <ticket/gate>: <real command/output or failing assertion>; <preserved fallback>` when a real attempt fails.
 
-Before ending a turn, add a dated `RUN_LOG.md` row stating the exact command(s), real output/artifact path, manifest ID/hash, commit, split, seed, what was verified, what remains TODO, and each Plan §9 ID touched. Add actual source URLs/keys, retrieval time, checksum/size, run/member/variable/step/units, and notes to `DATA_MANIFEST.csv`; never add placeholders as if they were records. Update `docs/data_audit.md` with decoded-source and hand-check evidence; update `DECISIONS.md` for any approved decision change. (Plan §§1–2, §6, §9)
+Before ending a turn, add a dated `docs/RUN_LOG.md` row stating the exact command(s), real output/artifact path, manifest ID/hash, git commit, split, seed, what was verified, what remains TODO, and each Plan §9 ID touched. Add actual source URLs/keys, retrieval time, checksum/size, run/member/variable/step/units, and notes to `DATA_MANIFEST.csv`; never add placeholders as if they were records. Update `docs/data_audit.md` with decoded-source and hand-check evidence; update `docs/DECISIONS.md` for any approved decision change. (Plan §§1–2, §6, §9)
 
 GPT plans/verifies; execution agents implement. A verifier may report a gate status, but no agent may turn a pending, blocked, or fixture-only gate into `✅ Complete` without the Plan-required artifact and real output.
 
@@ -114,7 +114,7 @@ Each target must invoke its named script and print the input manifest ID, git co
 ## Handoff etiquette
 
 - Work from `main` on `feat/<task-id>-<short-name>`, make a small vertical slice, and request review. Review schema, date/lead convention, provenance, and the smoke command before merge. No unreviewed dataset swap. (Plan §1)
-- Leave a dated `RUN_LOG.md` note before ending every session. State exactly what ran, what the terminal/tool actually proved, which files were changed, what remains TODO/blocked, and the Plan §9 ticket(s) touched. Do not convert an assumption into a run result. (Plan §§1, 6, 9)
+- Leave a dated `docs/RUN_LOG.md` note before ending every session. State exactly what ran, what the terminal/tool actually proved, which files were changed, what remains TODO/blocked, and the Plan §9 ticket(s) touched. Do not convert an assumption into a run result. (Plan §§1, 6, 9)
 - Refuse to mark an acceptance gate `✅` without its evidence. For example, D1-04 requires decoded GEFS and IMD source evidence, a signed concrete `IMD day ↔ [UTC start,end)` table, inspected +240/+246 GRIB steps, and real hand-computed 24-hour totals compared with script output—not an assumed 03–03 convention. (Plan §2; D1-04)
 - If data acquisition fails, retain the selected GEFSv12/IMD scope, document the failure, and continue only with visibly labeled fixture integration. Do not substitute recent GFS/ECMWF, IMERG, merged products, TIGGE, IMDAA, or NCUM data without an approved decision change and fresh validation. (Plan §§2, 10; Reference §3)
 - If leakage is found, halt evaluation, rebuild permitted artifacts, rerun checks, and invalidate affected scores/screenshots. If performance is negative or the test is inadequate, report that honestly. (Plan §10; Reference §§1, 3–4)
@@ -147,7 +147,7 @@ Check a task's box only after producing real, verifiable output for it in this s
 
 ### Phase 1: Repository contract and data-feasibility gate — [x] Phase complete
 
-- [x] D1-01 — Repo, roles, `DECISIONS.md`, issue board, schema contract (Owner: A+F) — done when: Six names, branch rules, sources/manifest template and issue ownership posted. Evidence: `DECISIONS.md` team roster; protected `main` requires one approving review; `DATA_MANIFEST.csv` and the Submission Roadmap provide the templates and ownership mapping; collaboration invitations were sent to the supplied accounts.
+- [x] D1-01 — Repo, roles, `docs/DECISIONS.md`, issue board, schema contract (Owner: A+F) — done when: Six names, branch rules, sources/manifest template and issue ownership posted. Evidence: `docs/DECISIONS.md` team roster; protected `main` requires one approving review; `DATA_MANIFEST.csv` and the Submission Roadmap provide the templates and ownership mapping; collaboration invitations were sent to the supplied accounts.
 - [x] D1-02 — GEFS real-object pilot per §3 S1–S2 (Owner: A) — done when: GRIB decodes; actual key, member/step/unit/grid/bytes logged. Evidence: `docs/data_audit.md` GEFS control precipitation inspection and `DATA_MANIFEST.csv` IDs `gefs-20180801-*`.
 - [x] D1-03 — IMD 2017/18 pilot per §3 S3 (Owner: B) — done when: Both annual files decode; date axis and mask logged. Evidence: `docs/data_audit.md` IMD annual-file pilot and `DATA_MANIFEST.csv` IDs `imd-2017-pilot` / `imd-2018-pilot`.
 - [x] D1-04 — 03–03/day label and +240/+246 Day-10 audit (Owner: A+B+F) — done when: Signed `data_audit.md`; exact/approximate/unavailable policy frozen. Otherwise empirical-model claim blocked. Evidence: signed D1-04 audit fixes the source-grounded 03–03 UTC convention for Day 1–9 and marks Day 10 `unavailable`/gray because the required +240–+243 interval is not evidenced.

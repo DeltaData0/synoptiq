@@ -45,11 +45,11 @@ For environments where GRIB bindings are difficult to build, use `conda env crea
   while the inspected archive supplies +240–+246 hours. See
   [docs/data_audit.md](docs/data_audit.md); do not present a Day-10 value as
   exact without a new approved audit.
-- See [DECISIONS.md](DECISIONS.md), [DATA_MANIFEST.csv](DATA_MANIFEST.csv), and [RUN_LOG.md](RUN_LOG.md) for change control.
+- See [DECISIONS.md](docs/DECISIONS.md), [DATA_MANIFEST.csv](DATA_MANIFEST.csv), and [RUN_LOG.md](docs/RUN_LOG.md) for change control.
 
 ## Project layout
 
-`src/bust/` contains the data, feature, model, and API packages. `data/fixtures/` is the only committed data directory. The implementation plan and canonical research reference remain in the repository root as the source planning record.
+`src/bust/` contains the data, feature, model, and API packages. `data/fixtures/` is the only committed data directory. The implementation plan and canonical research reference are retained in `docs/` as the source planning record.
 
 ## Sources
 

@@ -13,6 +13,7 @@ import {
   renderMapLoadingState,
 } from "./empty_state.js";
 import { createMap } from "./map.js";
+import { setupModals } from "./modals.js";
 import { renderRegion } from "./region.js";
 import { normalizeLeadCurveItem, normalizeRegion, normalizeReplay } from "./replay_adapter.js";
 import { renderTrust } from "./trust.js";
@@ -29,6 +30,8 @@ const state = {
   regionRequestId: 0,
 };
 
+let currentEvaluation = null;
+
 // DOM references
 const ribbonEl = document.querySelector("#fixture-ribbon");
 const navInitTime = document.querySelector("#nav-init-time");
@@ -43,6 +46,21 @@ const regionPanelEl = document.querySelector("#region-panel");
 const trustEl = document.querySelector("#trust");
 
 let controlsHandle = null;
+
+// Setup accessible modal system
+const modals = setupModals({
+  getEvaluationData: () => currentEvaluation,
+});
+
+// Wire top nav UI wrapper pills
+const btnNavScope = document.querySelector("#btn-nav-scope");
+if (btnNavScope) btnNavScope.addEventListener("click", () => modals.openOperationalScope());
+
+const btnNavLive = document.querySelector("#btn-nav-live");
+if (btnNavLive) btnNavLive.addEventListener("click", () => modals.openOperationalScope());
+
+const btnNavModel = document.querySelector("#btn-nav-model");
+if (btnNavModel) btnNavModel.addEventListener("click", () => modals.openFeatureArchitecture());
 
 function updateModeChrome(dataMode) {
   state.dataMode = dataMode || state.dataMode;
@@ -236,14 +254,18 @@ async function boot() {
       selectedLead: state.lead,
       onInitChange: (init) => loadReplay(init, state.lead),
       onLeadChange: (lead) => loadReplay(state.init, lead),
+      onOpenCorpusInfo: () => modals.openCorpusDates(),
+      onOpenFeatureArch: () => modals.openFeatureArchitecture(),
     });
 
     // 4. Initial Inspector Prompt
     renderInspectorPrompt(regionPanelEl);
 
     // 5. Load Evaluation & Trust Strip
-    const evaluation = await getEvaluation();
-    renderTrust(trustEl, evaluation);
+    currentEvaluation = await getEvaluation();
+    renderTrust(trustEl, currentEvaluation, {
+      onOpenReliability: () => modals.openReliability(),
+    });
 
     // 6. Load Replay
     await loadReplay(state.init, state.lead);

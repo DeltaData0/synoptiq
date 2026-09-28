@@ -25,16 +25,22 @@ function renderMetrics(metrics) {
       ["Candidate Brier", metrics.candidate.brier_score],
       ["Climatology Brier", metrics.climatology.brier_score],
       ["Candidate − climatology", metrics.brier_score_delta],
-      ["Uncalibrated Brier", metrics.candidate.uncalibrated_brier_score],
     ].filter(([, value]) => typeof value === "number" && Number.isFinite(value));
-    return `<div class="metric-grid">${comparison
-      .map(
-        ([label, value]) =>
-          `<span class="metric-card"><small>${escapeHtml(label)}</small><strong class="font-mono">${escapeHtml(
-            value.toFixed(3)
-          )}</strong></span>`
-      )
-      .join("")}</div>`;
+
+    return `<div class="metric-grid">
+      ${comparison
+        .map(
+          ([label, value]) =>
+            `<span class="metric-card"><small>${escapeHtml(label)}</small><strong class="font-mono">${escapeHtml(
+              value.toFixed(3)
+            )}</strong></span>`
+        )
+        .join("")}
+      <span class="metric-card metric-card-deferred" title="Spread-only baseline comparison is unavailable: p01–p04 member spread is not in current corpus">
+        <small>Spread baseline</small>
+        <strong class="font-mono text-warning">UNAVAILABLE</strong>
+      </span>
+    </div>`;
   }
 
   return `<div class="metric-grid">${Object.entries(metrics)
@@ -51,8 +57,9 @@ function renderMetrics(metrics) {
  * Renders the persistent bottom trust strip.
  * @param {HTMLElement} element
  * @param {object} evaluation
+ * @param {object} options
  */
-export function renderTrust(element, evaluation) {
+export function renderTrust(element, evaluation, { onOpenReliability } = {}) {
   const status = evaluation?.status || "insufficient_test_data";
   const message =
     evaluation?.message ||
@@ -70,6 +77,9 @@ export function renderTrust(element, evaluation) {
             EVAL: ${escapeHtml(status.toUpperCase().replace(/_/g, " "))}
           </span>
           ${metricsHtml}
+          <button type="button" class="btn-trust-action font-mono" id="btn-open-reliability" title="View plotted held-out reliability diagram and calibration curve">
+            <span class="btn-icon">📈</span> Reliability Diagram &rarr;
+          </button>
         </div>
         <p class="trust-message">${escapeHtml(message)}</p>
       </div>
@@ -97,4 +107,9 @@ export function renderTrust(element, evaluation) {
       </div>
     </div>
   `;
+
+  const relBtn = element.querySelector("#btn-open-reliability");
+  if (relBtn && onOpenReliability) {
+    relBtn.addEventListener("click", onOpenReliability);
+  }
 }
